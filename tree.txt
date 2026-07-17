@@ -1,0 +1,16 @@
+# PlantUML source registry (local)
+#
+# NOTE: Per user instruction, all article/schema/image/PlantUML files for this
+# project are kept HERE in the repository, NOT in ~/Downloads/me/access-denied/.
+# This file is the local equivalent of the access-denied tree.txt registry.
+#
+# One entry per article, keyed by its _posts/<filename>.md path. Each lists the
+# .puml sources that produced its diagrams and their location under
+# assets/article/<directory>/. Only the mindmap PNG is embedded in the article;
+# the concept/workflow/sequence diagrams are embedded in-section as PNGs.
+
+_posts/2026-07-17-cmtat-cardano-cip113.md
+  - assets/article/blockchain/cardano/cmtat-cardano-cip113.puml                       [mindmap]   -> cmtat-cardano-cip113.png (Conclusion)
+  - assets/article/blockchain/cardano/cmtat-cardano-cip113-architecture-concept.puml  [concept]   -> in-section (Architecture)
+  - assets/article/blockchain/cardano/cmtat-cardano-cip113-transfer-workflow.puml     [workflow]  -> in-section (Compliance gate)
+  - assets/article/blockchain/cardano/cmtat-cardano-cip113-enforcement-sequence.puml  [sequence]  -> in-section (Enforcement / seize)

@@ -1,0 +1,6 @@
+[submodule "cip113-programmable-tokens-platform"]
+	path = cip113-programmable-tokens-platform
+	url = https://github.com/cardano-foundation/cip113-programmable-tokens-platform/
+[submodule "CMTAT-equivalency-assessment"]
+	path = CMTAT-equivalency-assessment
+	url = https://github.com/CMTA/CMTAT-equivalency-assessment

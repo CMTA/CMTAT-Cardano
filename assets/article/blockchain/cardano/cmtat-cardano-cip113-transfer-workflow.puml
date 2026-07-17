@@ -1,0 +1,43 @@
+@startuml
+title Transfer validation — transfer_logic_script.withdraw
+
+start
+:Spend transaction submitted\n(prog-token UTxO consumed);
+:transfer_logic_validator.withdraw invoked\n(CIP-113 withdraw-0 hook);
+if (Security token in self.mint?\n(mint or burn)) then (yes)
+  :short-circuit -> True\n(authorised by minting_logic + cap);
+  stop
+else (no, pure transfer)
+endif
+:Read GlobalState reference input\n(authenticate NFT);
+if (transfers_paused == True?) then (yes)
+  :FAIL (paused);
+  stop
+else (no)
+endif
+:Collect unique sender stake creds\n(inputs holding the token);
+repeat
+  :Verify sender KYC proof\n(attestation Ed25519 / MPF membership);
+  :Verify sender denylist absence\n(covering-node proof);
+  if (both OK?) then (no)
+    :FAIL;
+    stop
+  else (yes)
+  endif
+repeat while (more senders?)
+:Collect unique destination stake creds;
+repeat
+  if (requires_receiver_kyc?) then (yes)
+    :Verify destination KYC proof;
+  else (no)
+  endif
+  :Verify destination denylist absence;
+  if (OK?) then (no)
+    :FAIL;
+    stop
+  else (yes)
+  endif
+repeat while (more destinations?)
+:PASS -> transfer valid;
+stop
+@enduml

@@ -1,0 +1,55 @@
+@startmindmap
+* CMTAT on Cardano\n(CIP-113 security-token)
+** Origin
+*** CMTAT (CMTA)
+*** EVM security-token framework
+*** RuleEngine + AccessControl
+** Substrate
+*** eUTXO ledger
+*** CIP-113 programmable tokens
+*** Native asset + transfer hook
+*** On-chain registry / directory
+** Validators (Aiken / Plutus V3)
+*** minting_logic_script
+*** transfer_logic_script
+*** third_party_transfer_logic
+*** global_state (mint + spend)
+*** power_users (linked list)
+*** denylist (linked list)
+** Global state (NFT datum)
+*** transfers_paused
+*** mintable_amount (supply cap)
+*** admin_credential_hash
+*** trusted_entity_vkeys (TEL)
+*** denylist / power-user policy ids
+*** member_root_hash (MPF)
+** Three authorities
+*** Admin (rotatable, dual-sig)
+*** Power users\n(can_mint / can_burn / can_pause / can_force_transfer)
+*** Trusted entities (KYC signers)
+left side
+** Compliance gate
+*** KYC attestation (Ed25519, TTL)
+*** MPF membership proof
+*** Denylist absence proof
+*** Pause gate
+** CMTAT mapping: present
+*** transfer / mint / burn
+*** pause / unpause
+*** freeze via denylist
+*** forcedTransfer (seize)
+*** forcedBurn
+*** allowlist / roles
+** CMTAT mapping: absent
+*** approve / allowance
+*** partial freeze
+*** snapshot
+*** dividend
+*** credit events
+*** debt module (metadata only)
+*** proxy upgradeability
+** Divergences
+*** mint / burn allowed while paused
+*** no holder self-burn
+*** immutable scripts
+@endmindmap

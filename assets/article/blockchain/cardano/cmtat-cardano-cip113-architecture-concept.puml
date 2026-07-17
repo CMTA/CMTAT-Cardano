@@ -1,0 +1,54 @@
+@startuml
+title CMTAT Cardano security-token — component architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+
+actor "Holder" as holder
+actor "Power user\n(can_mint/burn/pause/force)" as pu
+actor "Admin\n(GS credential hash)" as admin
+actor "Trusted entity\n(KYC issuer)" as te
+
+package "GlobalState UTxO (NFT-authenticated)" as GS {
+  card "transfers_paused" as gpause
+  card "mintable_amount\n(supply cap)" as gcap
+  card "admin_credential_hash" as gadmin
+  card "trusted_entity_vkeys (TEL)" as gtel
+  card "member_root_hash (MPF)" as gmpf
+  card "security_info (BaFin)" as ginfo
+}
+
+package "Linked lists (on-chain sets)" {
+  card "power_users\n(capability flag nodes)" as pull
+  card "denylist\n(sanctioned PKH nodes)" as dl
+}
+
+package "Logic validators (withdraw-0 hooks)" {
+  card "transfer_logic_script" as tl
+  card "third_party_transfer_logic\n(forced transfer)" as ttl
+  card "minting_logic_script\n(mint / burn)" as ml
+}
+
+package "CIP-113 core" {
+  card "registry / directory node" as reg
+  card "native security asset" as asset
+}
+
+holder --> tl : spend token
+pu --> ml : mint / burn
+pu --> ttl : seize
+admin --> pull : add / remove / modify
+admin --> dl : add / remove
+admin --> GS : rotate admin, TEL, receiver-KYC
+te ..> tl : off-chain KYC attestation
+
+tl --> GS : read pause, TEL, denylist policy
+tl --> dl : absence proof
+ttl --> GS : read pause, TEL
+ttl --> pull : can_force_transfer node
+ml --> GS : spend (MintSecurity cap)
+ml --> pull : can_mint / can_burn node
+tl --> reg : derive issuance policy id
+ml --> asset : mint / burn quantity
+@enduml

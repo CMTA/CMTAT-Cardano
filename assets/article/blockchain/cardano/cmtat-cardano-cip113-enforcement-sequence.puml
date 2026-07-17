@@ -1,0 +1,26 @@
+@startuml
+title Forced transfer (seize) — third_party_transfer_logic
+
+autonumber
+actor "Power user\n(can_force_transfer)" as PU
+participant "Transaction\nbuilder (off-chain)" as TX
+participant "third_party_transfer_\nlogic_validator" as V
+participant "GlobalState\n(ref input)" as GS
+participant "power_users\n(ref node)" as PUL
+participant "denylist\n(ref node)" as DL
+
+PU -> TX : build seize tx\n(move victim UTxO -> recipient)
+TX -> V : withdraw (redeemer + ref inputs)
+V -> GS : read transfers_paused, TEL, denylist policy
+alt paused
+  V --> TX : FAIL (paused)
+else not paused
+  V -> DL : destination absence proof
+  V -> GS : verify destination KYC proof (TEL)
+  note right of V : NO source checks\n(source may be denylisted / KYC-expired)
+  V -> PUL : read can_force_transfer flag
+  V -> V : require power-user signature
+  V --> TX : PASS -> seize valid
+end
+TX -> PU : signed, submitted
+@enduml
