@@ -4,3 +4,6 @@
 [submodule "CMTAT-equivalency-assessment"]
 	path = CMTAT-equivalency-assessment
 	url = https://github.com/CMTA/CMTAT-equivalency-assessment
+[submodule "fn-bafin-cardano-sc"]
+	path = fn-bafin-cardano-sc
+	url = https://github.com/FluidTokens/fn-bafin-cardano-sc.git
