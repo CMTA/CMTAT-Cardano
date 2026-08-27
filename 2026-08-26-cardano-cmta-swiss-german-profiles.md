@@ -50,7 +50,7 @@ One nuance is recorded rather than blocked, and it changes how a chain reads aft
 
 ## What the internal review changed
 
-The repository ships an adversarial self-review of its compliance layer that found eleven defects, two of them critical and reachable by any wallet with no prior position. Each is pinned by a test in `validators/regression.ak`, and each negative test is paired with a positive control built from the same fixtures, a discipline that caught four fixture bugs which had left negative tests passing for the wrong reason.
+The repository ships an adversarial self-review of its compliance layer that found eleven defects, two of them critical and exploitable by any wallet with no prior position. Each is pinned by a test in `validators/regression.ak`, and each negative test is paired with a positive control built from the same fixtures, a discipline that caught four fixture bugs which had left negative tests passing for the wrong reason.
 
 Two of the fixes changed the shape of the codebase rather than one line.
 
@@ -202,7 +202,7 @@ The knock-on effects are what make it a decommission rather than a stronger paus
 
 Not a single answer, because the pause is transfer-only by decision and the base layer then complicates it:
 
-- **Minting works.** A fresh mint spends no programmable-base UTxO, so the transfer logic never runs and its pause gate is never reached. This follows the CMTAT reference implementation, where mint goes through `_update` rather than the pause-checked transfer path.
+- **Minting works.** A fresh mint spends no programmable-base UTxO, so the transfer logic never runs and its pause gate does not apply. This follows the CMTAT reference implementation, where mint goes through `_update` rather than the pause-checked transfer path.
 - **Forced transfer works.** The seizure validator reads `deactivated` but not `transfers_paused`, deliberately: a regulator-ordered or court-ordered seizure cannot wait for an unpause.
 - **Ordinary transfers do not.** That is what the pause is for.
 - **Burning does not, on the standard path**, because it spends a UTxO and so re-enters the paused transfer logic. It remains possible through the seizure path, which needs `can_force_transfer`.
