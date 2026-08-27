@@ -14,3 +14,9 @@ _posts/2026-07-17-cmtat-cardano-cip113.md
   - assets/article/blockchain/cardano/cmtat-cardano-cip113-architecture-concept.puml  [concept]   -> in-section (Architecture)
   - assets/article/blockchain/cardano/cmtat-cardano-cip113-transfer-workflow.puml     [workflow]  -> in-section (Compliance gate)
   - assets/article/blockchain/cardano/cmtat-cardano-cip113-enforcement-sequence.puml  [sequence]  -> in-section (Enforcement / seize)
+
+_posts/2026-08-26-cardano-cmta-swiss-german-profiles.md
+  - assets/article/blockchain/cardano/cpt-rwa-ch-de-cmta-reference.puml                       [mindmap]   -> cpt-rwa-ch-de-cmta-reference.png (Conclusion)
+  - assets/article/blockchain/cardano/cpt-rwa-ch-de-cmta-reference-architecture-concept.puml  [concept]   -> in-section (permanent proxy / swappable authority)
+  - assets/article/blockchain/cardano/cpt-rwa-ch-de-cmta-reference-burn-workflow.puml         [workflow]  -> in-section (two behaviours nobody wrote)
+  - assets/article/blockchain/cardano/cpt-rwa-ch-de-cmta-reference-lifecycle-state.puml       [state]     -> in-section (one-way lock and terminal state)

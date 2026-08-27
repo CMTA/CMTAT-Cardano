@@ -1,14 +1,21 @@
 # CMTAT Equivalency Assessment — `fn-bafin-cardano-sc` (upstream BaFin Cardano contracts)
 
-> **This is a filled copy of [`README.md`](./README.md) (assessment template `v0.2.0`).**
-> The *implementation being approved* is **[`easy1staking-com/fn-bafin-cardano-sc`](https://github.com/easy1staking-com/fn-bafin-cardano-sc)**,
+> **This is a filled copy of [`CMTAT-equivalency-assessment/README.md`](./CMTAT-equivalency-assessment/README.md) (assessment template `v0.2.0`).**
+> The *implementation being approved* is **[`FluidTokens/fn-bafin-cardano-sc`](https://github.com/FluidTokens/fn-bafin-cardano-sc)**,
 > the standalone Aiken contract set for BaFin-compliant security tokens on Cardano
-> (author: Matteo Coppola, Finest team). It follows the **Harmonic Labs CIP-113**
+> (package namespace `ft/bafin`). It follows the **Harmonic Labs CIP-113**
 > draft (Michele Nuzzi, Matteo Coppola, Phil DiSarro).
+>
+> **Provenance note.** The CF substandard's own `aiken.toml` describes itself as
+> "ported from easy1staking-com/fn-bafin-cardano-sc". That string is the only
+> source for that name; it has not been verified to resolve as a GitHub path, and
+> neither this codebase nor the CF platform's Aiken sources mention it anywhere
+> else. The history containing the assessed commit is hosted under **FluidTokens**,
+> which is what this repository's submodule tracks and what is cited above.
 >
 > This is the **upstream** codebase that the Cardano Foundation CIP-113
 > `security-token` substandard was ported from (see
-> [`README-cardano-cip113-security-token.md`](./README-cardano-cip113-security-token.md)).
+> [`README-cip113-security-token.md`](./README-cip113-security-token.md)).
 > The two are functionally close; the sections below flag the divergences, chiefly
 > around the **denylist access-control model** and the **absence of the platform
 > integration rubber-stamps**.
@@ -96,7 +103,7 @@ The practical consequence of the missing mint/burn rubber-stamp is that this cod
 
 ### Metadata
 - Implementation language: **Aiken** (on-chain, Plutus V3 / eUTXO). Off-chain tooling is out of scope of this repository (contracts only; a `plutus.json` blueprint is shipped).
-- Implementation version: package **`ft/bafin` v0.0.0**; Aiken compiler **v1.1.22**; `plutus = "v3"`; repo commit **`67ab7d9`** (`easy1staking-com/fn-bafin-cardano-sc`, 2026-06-23). Deps: `aiken-lang/stdlib v3.1.0`, `anastasia-labs/aiken-design-patterns v1.6.0`, `aiken-lang/merkle-patricia-forestry v2.1.0`.
+- Implementation version: package **`ft/bafin` v0.0.0**; Aiken compiler **v1.1.22**; `plutus = "v3"`; repo commit **`67ab7d9`** (`FluidTokens/fn-bafin-cardano-sc`, 2026-06-23). Deps: `aiken-lang/stdlib v3.1.0`, `anastasia-labs/aiken-design-patterns v1.6.0`, `aiken-lang/merkle-patricia-forestry v2.1.0`.
 
 ### Token Attributes
 #### Mandatory
@@ -338,7 +345,7 @@ Implementation being approved:
 
 | Component | Repository | Version / Commit |
 |---|---|---|
-| `fn-bafin-cardano-sc` | https://github.com/easy1staking-com/fn-bafin-cardano-sc | commit `67ab7d9` (2026-06-23); pkg `ft/bafin` v0.0.0; Aiken `v1.1.22`; Plutus V3 |
+| `fn-bafin-cardano-sc` | https://github.com/FluidTokens/fn-bafin-cardano-sc | commit `67ab7d9` (2026-06-23); pkg `ft/bafin` v0.0.0; Aiken `v1.1.22`; Plutus V3. CF's `aiken.toml` names the origin as `easy1staking-com/fn-bafin-cardano-sc` (unverified path). |
 | CIP-113 draft followed | https://github.com/HarmonicLabs/CIPs/tree/master/CIP-meta-assets%20(ERC20-like%20assets) | Harmonic Labs (Nuzzi, Coppola, DiSarro) |
 | Derived CF substandard (for comparison) | https://github.com/cardano-foundation/cip113-programmable-tokens-platform | `src/substandards/security-token/` |
 

@@ -1,0 +1,55 @@
+@startmindmap
+<style>
+mindmapDiagram {
+  node {
+    BackgroundColor #EEF5FF
+    LineColor #4A78B5
+  }
+  :depth(1) {
+    BackgroundColor #4A78B5
+    FontColor white
+  }
+}
+</style>
+* Cardano CMTA\nreference profiles\n(cpt-rwa-ch-de)
+** Two profiles, one codebase
+*** German (eWpG)\nregisterfuehrende Stelle
+*** Swiss (CMTA framework)\nABS-01..14 mandatory
+*** Shared validators,\ndifferent metadata schema
+** Upgrade model
+*** Permanent proxy\nminting_logic_script
+*** Swappable authority\nminting_authority
+*** RotateMintingScript\n(admin, single-sig)
+*** UpgradeRegistryNode\n(transfer + seizure logic)
+*** LockUpgrades\n(one-way, closes both)
+** Terminal state
+*** DeactivateContract\n(requires paused first)
+*** Terminal guard on\nGlobalState spend
+*** Cancelled or immobilised\nboth supported
+** Compliance gate
+*** Denylist absence\n(covering node, memoised)
+*** KYC attestation\n(Ed25519, TTL, policy, network)
+*** MPF membership proof
+*** Sender and receiver\ntoggled independently
+left side
+** Base-layer composition
+*** Custody delegated\nto CIP-113
+*** Burn re-enters\ntransfer logic
+*** Seizure all-or-nothing\nper UTxO
+*** Verified at base\ncommit 018415d
+** Authorities
+*** Admin (rotatable, dual-sig)
+*** Power users\nis_admin / mint / burn\npause / force_transfer
+*** Trusted entities\n(off-chain KYC signers)
+** CMTAT delta vs predecessor
+*** Deactivate: now present
+*** Frozen-address burn:\nnow blocked
+*** Forced transfer:\nsurvives a pause
+*** Upgradeability:\nnow partial
+** Still absent
+*** approve / allowance
+*** partial freeze
+*** snapshot / dividend
+*** credit events
+*** debt module
+@endmindmap

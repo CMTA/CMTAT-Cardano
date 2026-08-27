@@ -7,3 +7,6 @@
 [submodule "fn-bafin-cardano-sc"]
 	path = fn-bafin-cardano-sc
 	url = https://github.com/FluidTokens/fn-bafin-cardano-sc.git
+[submodule "cpt-rwa-ch-de-cmta-reference"]
+	path = cpt-rwa-ch-de-cmta-reference
+	url = https://github.com/cardano-foundation/cpt-rwa-ch-de-cmta-reference.git
