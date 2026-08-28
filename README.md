@@ -2,7 +2,7 @@
 
 Working repository for the analysis of **CMTAT-equivalent security tokens on Cardano**.
 
-[CMTAT](https://github.com/CMTA/CMTAT) (CMTA Token) is the security-token framework published by the Capital Markets and Technology Association for tokenizing regulated financial instruments. It is Solidity, and it assumes an EVM: a token is a contract with methods, roles live in an OpenZeppelin role registry, and transfer rules are delegated to an external `RuleEngine`. Cardano offers none of that. Value settles in unspent outputs, scripts are immutable once deployed, and there is no `msg.sender`.
+[CMTAT](https://github.com/CMTA/CMTAT) (CMTA Token) is the security-token framework published by the Capital Markets and Technology Association for tokenizing regulated financial instruments. The framework is blockchain-agnostic, but its reference implementation is Solidity and assumes an EVM: a token is a contract with methods, roles live in an OpenZeppelin role registry, and transfer rules are delegated to an external `RuleEngine`. That is the version these assessments compare against. Cardano offers none of it. Value settles in unspent outputs, scripts are immutable once deployed, and there is no `msg.sender`.
 
 Three Cardano codebases have nonetheless built the CMTAT feature set on top of [CIP-113](https://github.com/HarmonicLabs/CIPs/blob/master/CIP-0113/README.md) (programmable tokens). This repository holds, for each of them, a **filled CMTA equivalency assessment** mapping the implementation function by function against the CMTAT checklist, plus two **articles** that explain how the mapping works and where the two models pull apart.
 

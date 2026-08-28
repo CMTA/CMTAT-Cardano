@@ -1,4 +1,4 @@
-The CMTAT standard was written for EVM chains, where a token is a contract with methods and a role registry. Cardano offers neither: it settles value with unspent outputs and immutable scripts. This article describes how the Cardano Foundation's CIP-113 **security-token** substandard reconstructs the CMTAT feature set on that different substrate, which parts map cleanly, and where the two models diverge.
+CMTAT is a blockchain-agnostic framework, but its reference implementation is Solidity, where a token is a contract with methods and a role registry. Cardano offers neither: it settles value with unspent outputs and immutable scripts. This article describes how the Cardano Foundation's CIP-113 **security-token** substandard reconstructs the CMTAT feature set on that different substrate, which parts map cleanly, and where the two models diverge.
 
 > This article has been made with the help of [Claude Code](https://claude.com/product/claude-code) and several custom skills
 
@@ -6,7 +6,7 @@ The CMTAT standard was written for EVM chains, where a token is a contract with 
 
 ## Background: what CMTAT provides
 
-[CMTAT](https://github.com/CMTA/CMTAT) (CMTA Token) is a security-token framework maintained by the Capital Markets and Technology Association for tokenizing regulated financial instruments on EVM-compatible chains. It is a modular Solidity codebase: an ERC-20 core is composed with pause, enforcement (freeze and forced transfer), validation, snapshot, document, debt, and access-control modules, and transfer rules are delegated to an external `RuleEngine`. Authorization uses OpenZeppelin role-based access control with granular roles such as `MINTER_ROLE`, `BURNER_ROLE`, `PAUSER_ROLE`, and `ENFORCER_ROLE`.
+[CMTAT](https://github.com/CMTA/CMTAT) (CMTA Token) is a security-token framework maintained by the Capital Markets and Technology Association for tokenizing regulated financial instruments. The framework itself is **blockchain-agnostic** — a functional specification of numbered functionalities, which implementations in several languages target, and which the equivalency template treats as distinct from any one of them. Solidity is its reference implementation and the one this article compares against; implementations also exist for Tezos and Aztec, and a specification for Solana. The Solidity version is a modular codebase: an ERC-20 core is composed with pause, enforcement (freeze and forced transfer), validation, snapshot, document, debt, and access-control modules, and transfer rules are delegated to an external `RuleEngine`. Authorization uses OpenZeppelin role-based access control with granular roles such as `MINTER_ROLE`, `BURNER_ROLE`, `PAUSER_ROLE`, and `ENFORCER_ROLE`.
 
 The reference against which this port is measured is the [CMTAT Equivalency Assessment](https://github.com/CMTA/CMTAT-equivalency-assessment), a checklist that CMTA publishes so that a non-Solidity implementation can be evaluated function by function: token attributes, the token module, pause, enforcement, transfer restrictions, access control, and the optional snapshot, dividend, credit-event, and debt modules.
 
@@ -128,7 +128,7 @@ The CIP-113 security-token substandard reproduces the CMTAT enforcement model on
 
 | Term | Definition |
 |------|------------|
-| **CMTAT** | The CMTA Token security-token framework for tokenizing regulated financial instruments, originally a modular Solidity codebase for EVM chains. |
+| **CMTAT** | The CMTA Token security-token framework for tokenizing regulated financial instruments. Blockchain-agnostic as a specification; its reference implementation is a modular Solidity codebase, which is what this article maps against. |
 | **CIP-113** | The Cardano proposal for programmable tokens, which attaches a mandatory validation hook to native-asset mints, burns, and transfers. |
 | **eUTXO** | Cardano's extended unspent-transaction-output ledger, where value is held in outputs and spending runs a validator over the whole transaction. |
 | **Substandard** | A pluggable rule set that defines how one class of CIP-113 programmable token behaves on top of the shared core framework. |

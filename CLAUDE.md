@@ -21,7 +21,7 @@ A **documentation and analysis** repository, not a code repository: it holds fil
 
 ## Key concepts
 
-- **CMTAT** is CMTA's EVM/Solidity security-token framework. **CIP-113** is Cardano's programmable-token proposal. The assessments map the second onto the first, item by item, using CMTA's own fillable template.
+- **CMTAT** is CMTA's security-token framework. The framework is **blockchain-agnostic** — the equivalency template treats "the CMTAT framework", "the CMTAT Solidity version" and "your implementation" as three distinct things, and every table column is headed *CMTAT Solidity corresponding feature*. Solidity is the reference implementation and the one these assessments compare against; implementations also exist for Tezos and Aztec, and a specification for Solana. Do not describe CMTAT itself as EVM-only or as a Solidity codebase. **CIP-113** is Cardano's programmable-token proposal. The assessments map the second onto the first, item by item, using CMTA's own fillable template.
 - **Three Cardano codebases**, in lineage order: `fn-bafin-cardano-sc` (upstream) → the CF platform's `security-token` substandard (port) → `cpt-rwa-ch-de-cmta-reference` (standalone successor, Swiss + German profiles). Each has its own assessment.
 - **Assessments are filled copies of the CMTA template `v0.2.0`.** Keep its section order and its 54 numbered IDs intact — never renumber, merge or drop a row. Fill only the last three columns (`y/n`, access control, implementation details), plus `##### Note` blocks.
 - **Answer vocabulary in use:** `y`, `n`, `partial`, `n (partial)`, `n (implicit)`, `y (diverges)`, `y (metadata)`, `n (not permitted)`. Reuse an existing form rather than inventing one.
