@@ -36,12 +36,14 @@
 - [Reference](#reference)
 
 ## Document Version
-`v0.2.0` (assessment template)
+`v0.1.0` (this assessment), filled from CMTA assessment template `v0.2.0`
 
 Note:
 
 - versions with the `rc` suffix are draft versions.
 - version before `1.0` are also draft versions
+
+Both numbers are below `1.0`, so by the rule above this assessment and the template it follows are each still a draft.
 
 ## How to Use This Document
 - Use the **CMTAT Function Equivalency Table** as the fillable assessment checklist.

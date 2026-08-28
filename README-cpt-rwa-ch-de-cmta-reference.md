@@ -82,12 +82,14 @@ The Solidity implementation ships four deployment variants, which appear as colu
 The implementation assessed here does not map onto exactly one variant. It sits closest to **CMTAT Standard** — both shipped profiles target equity-style regulated securities and the debt module is out of scope (IDs 41–54) — but it also answers `y` to the **CMTAT Allowlist** row, because KYC is a built-in attestation check rather than an external rule set, *and* to the external-rules and RuleEngine rows, because the transfer and seizure logic scripts are themselves pluggable over the CIP-113 core. Read the variant columns as the origin of each requirement, not as a single target to match.
 
 ## Document Version
-`v0.2.0` (assessment template)
+`v0.1.0` (this assessment), filled from CMTA assessment template `v0.2.0`
 
 Note:
 
 - versions with the `rc` suffix are draft versions.
 - version before `1.0` are also draft versions
+
+Both numbers are below `1.0`, so by the rule above this assessment and the template it follows are each still a draft.
 
 ## How to Use This Document
 - Use the **CMTAT Function Equivalency Table** as the fillable assessment checklist.
@@ -616,4 +618,4 @@ Assessment template submodules (unchanged from the template — the CMTAT Solidi
 | CMTAT | https://github.com/CMTA/CMTAT | `v3.2.0` | `49544f4de1993008acfc9e848d0bf03bd31d8579` |
 | SnapshotEngine | https://github.com/CMTA/SnapshotEngine | `v0.3.0-1-g19e0b56` | `19e0b569bf5823aa8cec5760f080a932a9ac940e` |
 | RuleEngine | https://github.com/CMTA/RuleEngine | `v3.0.0-rc2-2-g9c0aa70` | `9c0aa70aae08047e4062beab0f89f92bd60252c0` |
-| Rules | https://github.com/CMTA/Rules | `v0.3.0` | `91c21c1191e84ff938892267ec443b0d1bb9efb0` |
+| Rules | https://github.com/CMTA/Rules | `v0.3.0` | `91c21c1191e84ff938892267ec443b0d1bb9efb0`docs: explain what a validator is in the assessment annex |
