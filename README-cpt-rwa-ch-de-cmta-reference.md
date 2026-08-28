@@ -57,7 +57,10 @@ An implementation MAY satisfy the CMTAT standard while still failing to meet the
 
 > **Additional warnings specific to this implementation.**
 >
-> 1. **Unaudited.** The repository states plainly that a formal third-party security audit is *planned and not yet completed*, and that the code should be treated as unaudited until it is. Two penetration-testing engagements were carried out by FT Labs on 23 and 26 June 2026 against commits `dd2b754` and `1beeed6`; the minting-proxy upgradability, the `GlobalStateLocation` change and the 2026-08-19/20 internal-review fixes all postdate both, so **neither report covers the assessed code**. 2. **Internal adversarial review, not an audit.** An internal review of the compliance layer found eleven defects (two critical). **Ten were fixed**, each pinned by a test in `validators/regression.ak`; the eleventh — *pause does not stop issuance*, severity medium — was **accepted as intended behaviour rather than fixed**, and is recorded here as the `Mint while pause` row of [Implementation Details](#implementation-details). All eleven are written up in [`documents/security/security-fixes.md`](./cpt-rwa-ch-de-cmta-reference/documents/security/security-fixes.md). 3. This assessment is a **functional-mapping exercise only**. It is not a security review and not a legal opinion. 4. **Two deployment properties no on-chain code can check** (recorded by the implementation itself) materially affect several `y` answers below: the GlobalState NFT must actually land at `global_state_spend_validator`'s address at genesis, and every role credential must name something that genuinely decides (the `must_be_signed_by_credential` helper accepts a script withdrawal, so a permissive script hash in any role field fails **open**, silently). Both must be verified off-chain, after genesis and after every rotation.
+> 1. **Unaudited.** The repository states plainly that a formal third-party security audit is *planned and not yet completed*, and that the code should be treated as unaudited until it is. Two penetration-testing engagements were carried out by FT Labs on 23 and 26 June 2026 against commits `dd2b754` and `1beeed6`; the minting-proxy upgradability, the `GlobalStateLocation` change and the 2026-08-19/20 internal-review fixes all postdate both, so **neither report covers the assessed code**.
+> 2. **Internal adversarial review, not an audit.** An internal review of the compliance layer found eleven defects (two critical). **Ten were fixed**, each pinned by a test in `validators/regression.ak`; the eleventh — *pause does not stop issuance*, severity medium — was **accepted as intended behaviour rather than fixed**, and is recorded here as the `Mint while pause` row of [Implementation Details](#implementation-details). All eleven are written up in [`documents/security/security-fixes.md`](./cpt-rwa-ch-de-cmta-reference/documents/security/security-fixes.md).
+> 3. This assessment is a **functional-mapping exercise only**. It is not a security review and not a legal opinion.
+> 4. **Two deployment properties no on-chain code can check** (recorded by the implementation itself) materially affect several `y` answers below: the GlobalState NFT must actually land at `global_state_spend_validator`'s address at genesis, and every role credential must name something that genuinely decides (the `must_be_signed_by_credential` helper accepts a script withdrawal, so a permissive script hash in any role field fails **open**, silently). Both must be verified off-chain, after genesis and after every rotation.
 
 ## Relationship to the other assessments in this repository
 
@@ -78,7 +81,9 @@ Three Cardano CIP-113 codebases in this lineage have now been assessed. The tabl
 
 This implementation is **not** an ERC-20-style contract with named methods. It is a set of **Aiken (Plutus V3) validators** operating on Cardano's **eUTXO** ledger, following the **CIP-113 programmable-token** pattern. Understanding the following mapping conventions is required to read the tables:
 
-- **"Validator" here means a Plutus script**, not a node or a stake pool: no network participant approves anything, and the issuer deploys these scripts themselves. The deployment compiles **ten validators across seven source modules** (`global_state`, `power_users` and `denylist` each declare both a `mint` and a `spend` validator; the other four modules declare one each), which is why the repository's parameter-application table has ten rows. CIP-113 itself mandates far less — a registry node naming a minting-logic script and the transfer-logic scripts, which the platform's `dummy` substandard satisfies in a single 446-byte file. The rest is what CMTAT semantics cost on eUTXO: mutable configuration needs the GlobalState UTxO, the absence of a mapping type turns each of the two sets into a linked list (a mint plus a spend validator apiece), and upgradeability needs the proxy/authority split. **One prerequisite is not in this repository:** the CIP-113 base layer (registry + programmable-logic base) must already be deployed on the target network, and `registry_policy_id` is obtained from it rather than compiled here.
+- **"Validator" here means a Plutus script**, not a node or a stake pool: no network participant approves anything, and the issuer deploys these scripts themselves. The deployment compiles **ten validators across seven source modules** (`global_state`, `power_users` and `denylist` each declare both a `mint` and a `spend` validator; the other four modules declare one each), which is why the repository's parameter-application table has ten rows.
+  - CIP-113 itself mandates far less — a registry node naming a minting-logic script and the transfer-logic scripts, which the platform's `dummy` substandard satisfies in a single 446-byte file. The rest is what CMTAT semantics cost on eUTXO: mutable configuration needs the GlobalState UTxO, the absence of a mapping type turns each of the two sets into a linked list (a mint plus a spend validator apiece), and upgradeability needs the proxy/authority split.
+  - **One prerequisite is not in this repository:** the CIP-113 base layer (registry + programmable-logic base) must already be deployed on the target network, and `registry_policy_id` is obtained from it rather than compiled here.
 - **The token** is a **native Cardano asset**. Its identity is the CIP-113 *issuance policy id* — pinned into every validator at compile time as `expected_issuance_policy_id` — plus a compile-time `security_asset_name: ByteArray`. There is no `name()/symbol()/decimals()/totalSupply()/balanceOf()`; those are ledger-, CIP-68- or off-chain-level concepts on Cardano.
 - **Every transfer** triggers a **withdraw-0 "transfer logic" stake validator** (`transfer_logic_validator`) that must succeed for the spend to be valid — this is the CIP-113 equivalent of a CMTAT RuleEngine / transfer hook. Seizures go through a second one (`third_party_transfer_logic_validator`), and mint/burn through a third pair (`minting_logic_validator` → `minting_authority_validator`).
 - **Global mutable state** lives in a single **GlobalState NFT-authenticated UTxO** (`GlobalStateDatum`, 14 fields): `transfers_paused`, `deactivated`, `mintable_amount` (remaining supply cap), `admin_credential_hash`, the two linked-list policy ids, `security_info`, the trusted-entity list, `member_root_hash`, `requires_sender_kyc`, `requires_receiver_kyc`, an immutable `network_id`, `minting_script_credential_hash`, and `upgrades_locked`.
@@ -303,7 +308,17 @@ unfreeze(address targetAddress)
 
 ##### Note
 
-> This implementation uses the **two-function** form via the denylist mint validator: `AddToDenylist { user_pkh, .. }` and `RemoveFromDenylist { user_pkh, .. }`, both gated on a power user holding `is_admin` plus their signature. "Frozen status" is **presence of a node** in an ordered linked list keyed by the 28-byte credential hash; absence is proven at transfer time by a *covering-node* reference input. Semantics are stricter than CMTAT's send-side freeze: a denylisted address can **neither send nor receive**, this blocks forced transfers *to* a denylisted destination (though not *from* one — see ID 17), and it now also blocks an ordinary **burn** of that holder's tokens, since a burn re-enters the sender-side transfer logic. Two design points: the denylist keys on the **bare hash**, so sanctioning a hash sanctions both the verification-key and script credential forms (the conservative direction — the KYC path deliberately distinguishes them); and the covering node is authenticated once per *run* of adjacent parties citing it, so builders should keep parties that share a node adjacent in the action lists.
+> This implementation uses the **two-function** form via the denylist mint validator: `AddToDenylist { user_pkh, .. }` and `RemoveFromDenylist { user_pkh, .. }`, both gated on a power user holding `is_admin` plus their signature. "Frozen status" is **presence of a node** in an ordered linked list keyed by the 28-byte credential hash; absence is proven at transfer time by a *covering-node* reference input.
+>
+> Semantics are stricter than CMTAT's send-side freeze. A denylisted address can **neither send nor receive**, which means:
+>
+> - forced transfers *to* a denylisted destination are blocked (though not *from* one — see ID 17);
+> - an ordinary **burn** of that holder's tokens is blocked too, since a burn re-enters the sender-side transfer logic.
+>
+> Two design points worth knowing when building transactions:
+>
+> - the denylist keys on the **bare hash**, so sanctioning a hash sanctions both the verification-key and script credential forms — the conservative direction, where the KYC path deliberately distinguishes them;
+> - the covering node is authenticated once per *run* of adjacent parties citing it, so keep parties that share a node adjacent in the action lists.
 
 ### CMTAT Extended
 
@@ -323,7 +338,21 @@ In the table below, the CMTAT framework extended features are mapped to Solidity
 
 ##### Note
 
-> **Upgradeability** here is a *proxy-and-registry* model rather than an EVM storage proxy, and the trade-off is stated explicitly by the implementation: because the permanent proxy checks nothing beyond "the named authority ran", a replacement authority inherits the full burden of correctness, and five invariants (no registry node spent during a supply change; GlobalState must be spent; only `security_asset_name` mintable; not deactivated; registration structure) are enforced there or nowhere. `LockUpgrades` is the on-chain form of "this token's rules can no longer change" — meaningful to holders and regulators because an admin-key compromise cannot undo it — at the cost of also giving up the ability to patch a buggy authority. One nuance the implementation records rather than blocks: because `UpgradeRegistryNode` may read GlobalState as a *spent* input, an admin can pair a final upgrade with `LockUpgrades` (or with `RotateAdmin`, or with `DeactivateContract`) in the same transaction and have it see the pre-state. It grants no power the admin did not already have across two transactions, but "locked at slot N" implies "no upgrade *after* N", not "none *at* N". **Gasless/sponsorship** stays off-chain. The KYC proof design is **network-bound** (`network_id`, immutable after genesis) to prevent cross-network attestation replay.
+> **Upgradeability** here is a *proxy-and-registry* model rather than an EVM storage proxy, and the implementation states the trade-off explicitly: because the permanent proxy checks nothing beyond "the named authority ran", a replacement authority inherits the full burden of correctness.
+>
+> Five invariants are therefore enforced in the authority or nowhere:
+>
+> - no registry node spent during a supply change;
+> - GlobalState must be spent;
+> - only `security_asset_name` mintable;
+> - not deactivated;
+> - registration structure.
+>
+> `LockUpgrades` is the on-chain form of "this token's rules can no longer change" — meaningful to holders and regulators because an admin-key compromise cannot undo it — at the cost of also giving up the ability to patch a buggy authority.
+>
+> **One nuance the implementation records rather than blocks.** Because `UpgradeRegistryNode` may read GlobalState as a *spent* input, an admin can pair a final upgrade with `LockUpgrades` (or with `RotateAdmin`, or with `DeactivateContract`) in the same transaction and have it see the pre-state. It grants no power the admin did not already have across two transactions, but "locked at slot N" implies "no upgrade *after* N", not "none *at* N".
+>
+> Two unrelated rows of the table above: **gasless/sponsorship** stays off-chain, and the KYC proof design is **network-bound** (`network_id`, immutable after genesis) to prevent cross-network attestation replay.
 
 ### Forced Burn and Forced Transfer
 
