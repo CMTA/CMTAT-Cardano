@@ -4,6 +4,10 @@
 
 ## Table of Contents
 
+- [About CMTA and CMTAT](#about-cmta-and-cmtat)
+  - [CMTA](#cmta)
+  - [CMTAT](#cmtat)
+  - [Deployment variants](#deployment-variants)
 - [Document Version](#document-version)
 - [How to Use This Document](#how-to-use-this-document)
 - [General Note](#general-note)
@@ -39,6 +43,42 @@
   - [Denied transfer: a sanctioned holder](#denied-transfer-a-sanctioned-holder)
   - [Denied transfer: a paused protocol](#denied-transfer-a-paused-protocol)
 - [Reference](#reference)
+
+## About CMTA and CMTAT
+
+### CMTA
+
+The **Capital Markets and Technology Association** ([cmta.ch](https://www.cmta.ch/)) is a Swiss association that gathers organizations from the financial, legal and technology sectors. CMTAT is an open standard published by CMTA: it was first developed by a working group of CMTA's members, and its development is now overseen by the Technical Committee of CMTA's Advisory Board. CMTA also publishes the fillable equivalency template that this document is a completed copy of.
+
+### CMTAT
+
+The **CMTA Token (CMTAT)** is a security-token framework for tokenizing regulated financial instruments. It combines compliance features — conditional transfer, account freeze, token pause, forced transfer, snapshots, document attachment — with technical ones such as cross-chain transfer and upgradeability. It was initially optimized for the Swiss legal framework; CMTA states that its feature set makes it suitable for other jurisdictions too, and the framework targets equities, structured products, debt instruments and stablecoins.
+
+**CMTAT is a framework, not a codebase.** CMTA documents it in a platform-agnostic way, and the equivalency template treats *the CMTAT framework*, *the CMTAT Solidity version* and *your implementation* as three distinct things — which is why every reference column in the tables below is headed "CMTAT **Solidity** corresponding feature". The Solidity version is CMTA's **reference implementation**, suitable for EVM chains, and is the one this assessment compares against; it is not the standard itself.
+
+Implementations and specifications published or endorsed by CMTA:
+
+| Target | Language | Repository | Developed by |
+|---|---|---|---|
+| **EVM** (reference implementation) | Solidity | [`CMTA/CMTAT`](https://github.com/CMTA/CMTAT) | CMTA |
+| Tezos | SmartPy (FA2) | [`CMTA/CMTAT-Tezos-FA2`](https://github.com/CMTA/CMTAT-Tezos-FA2) | AirGap, with CMTA |
+| Aztec | Noir | [`taurushq-io/private-CMTAT-aztec`](https://github.com/taurushq-io/private-CMTAT-aztec) | Taurus, with CMTA |
+| Solana | *specification only* | [`CMTA/CMTAT-Solana`](https://github.com/CMTA/CMTAT-Solana) | Taurus, as an internal CMTA project |
+
+**Cardano is not among them.** The three Cardano codebases in this repository's lineage are independent implementations assessed against the framework, not official CMTA ports. That is what this document exists to evaluate.
+
+### Deployment variants
+
+The Solidity implementation ships four deployment variants, which appear as columns in the [CMTAT Extended](#cmtat-extended) table below. They differ in which optional modules are compiled in, not in their compliance core.
+
+| Variant | Intended instrument | What it includes |
+|---|---|---|
+| **CMTAT Standard** | Equities | Every feature except those specific to debt. |
+| **CMTAT Debt** | Bonds and debt products | Standard, plus on-chain debt and bond attributes. |
+| **CMTAT Allowlist** | Any, where transfers must stay inside a whitelist | Standard, plus an integrated allowlist rather than an external `RuleEngine`. |
+| **CMTAT Light** | Stablecoins | Core only — mint, burn, address freeze, pause — without document management, snapshots or `forcedTransfer`. |
+
+The implementation assessed here does not map onto exactly one variant. It sits closest to **CMTAT Standard** — both shipped profiles target equity-style regulated securities and the debt module is out of scope (IDs 41–54) — but it also answers `y` to the **CMTAT Allowlist** row, because KYC is a built-in attestation check rather than an external rule set, *and* to the external-rules and RuleEngine rows, because the transfer and seizure logic scripts are themselves pluggable over the CIP-113 core. Read the variant columns as the origin of each requirement, not as a single target to match.
 
 ## Document Version
 `v0.2.0` (assessment template)
