@@ -1,6 +1,12 @@
 # CMTAT Equivalency Assessment — `cpt-rwa-ch-de-cmta-reference` (Cardano, Swiss/German profiles)
 
-> **This is a filled copy of [`CMTAT-equivalency-assessment/README.md`](./CMTAT-equivalency-assessment/README.md) (assessment template `v0.2.0`).** The *implementation being approved* is [`cardano-foundation/cpt-rwa-ch-de-cmta-reference`](https://github.com/cardano-foundation/cpt-rwa-ch-de-cmta-reference) — "Programmable asset tokens on Cardano — German and Swiss profiles", the Aiken (Plutus V3) contracts under `validators/` and `lib/`, at commit **`ff5624e`** (2026-08-24). It is the **successor** to the `security-token` substandard of the CIP-113 Programmable Tokens Platform (assessed in [`README-cip113-security-token.md`](./README-cip113-security-token.md)), which was itself a port of [`fn-bafin-cardano-sc`](./README-fn-bafin-cardano-sc.md). The repository ships **two profiles over one shared codebase**: a *German profile* (eWpG / BaFin) and a *Swiss profile* (CMTA Framework); only the metadata schema and which behaviours are mandatory differ.
+This document answers one question: how much of the CMTAT security-token standard does this Cardano implementation actually provide?
+
+It works through CMTA's own 54-item checklist and records, for each item, whether the behaviour exists, who may invoke it, and how it is enforced on-chain. It is written for an issuer, registrar or adviser deciding whether the codebase is a usable basis for a regulated token, and it assumes no Cardano background. [About CMTA and CMTAT](#about-cmta-and-cmtat) introduces the standard and its implementations; the [Architecture Primer](#architecture-primer-read-first) explains how a Solidity contract's methods map onto Cardano scripts; the [Annex](#annex) defines the vocabulary and walks through two worked examples of a refused transfer.
+
+It is not a security audit and not a legal opinion. Read the [Warning](#warning) before relying on any answer below.
+
+The code assessed, the commit it is pinned to and the toolchain are recorded under [Metadata](#metadata). Where this codebase sits among the three assessed in this repository is set out in [Relationship to the other assessments](#relationship-to-the-other-assessments-in-this-repository).
 
 ## Table of Contents
 
@@ -111,7 +117,9 @@ An implementation MAY satisfy the CMTAT standard while still failing to meet the
 
 ## Relationship to the other assessments in this repository
 
-Three Cardano CIP-113 codebases in this lineage have now been assessed. The table records only where the *CMTAT answers* differ; everything not listed is unchanged.
+This implementation is the **successor** to the `security-token` substandard of the CIP-113 Programmable Tokens Platform (assessed in [`README-cip113-security-token.md`](./README-cip113-security-token.md)), which was itself a port of [`fn-bafin-cardano-sc`](./README-fn-bafin-cardano-sc.md). All three have now been assessed against the same template.
+
+The table records only where the *CMTAT answers* differ; everything not listed is unchanged.
 
 | CMTAT item | `fn-bafin-cardano-sc` | CF `security-token` substandard | **This implementation** |
 |---|---|---|---|
@@ -146,6 +154,8 @@ This implementation is **not** an ERC-20-style contract with named methods. It i
 ## CMTAT Function Equivalency Table
 
 ### Metadata
+- Implementation assessed: [`cardano-foundation/cpt-rwa-ch-de-cmta-reference`](https://github.com/cardano-foundation/cpt-rwa-ch-de-cmta-reference) — "Programmable asset tokens on Cardano — German and Swiss profiles". The code covered is the contracts under `validators/` and `lib/`.
+- Profiles: the repository ships **two profiles over one shared codebase**, a *German profile* (eWpG / BaFin) and a *Swiss profile* (CMTA Framework). Only the metadata schema and which behaviours are mandatory differ; the validators are the same.
 - Implementation language: **Aiken** (on-chain, Plutus V3 / eUTXO). Off-chain tooling is out of scope for this repository (it ships contracts, `plutus.json` and a KYC test-vector script only).
 - Implementation version: Aiken package `ft/rwa` **v0.0.0**; Aiken compiler **v1.1.23**; `plutus = "v3"`; repo commit **`ff5624e`** (2026-08-24). Deps: `aiken-lang/stdlib v3.1.0`, `anastasia-labs/aiken-design-patterns v1.8.0`, `aiken-lang/merkle-patricia-forestry v2.1.0`, `aiken-lang/fuzz v2.2.0`, `keyan-m/aiken-scott-utils v1.4.0`. CIP-113 base-layer guarantees verified against base commit **`018415d`**.
 - Reference implementation compared against: **CMTAT v3.2.0** (Solidity) — the repository names it explicitly as its semantic reference, and also records that v3.2.0 has not itself been fully audited: **v3.0.0 is the latest fully audited CMTAT release**.
