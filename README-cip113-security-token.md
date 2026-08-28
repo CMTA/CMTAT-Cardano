@@ -1,15 +1,6 @@
 # CMTAT Equivalency Assessment — Cardano CIP-113 `security-token` Substandard
 
-> **This is a filled copy of [`CMTAT-equivalency-assessment/README.md`](./CMTAT-equivalency-assessment/README.md) (assessment template `v0.2.0`).**
-> The *implementation being approved* is the **`security-token`** substandard of the
-> Cardano Foundation **CIP-113 Programmable Tokens Platform**, i.e. the Aiken
-> validators under
-> `cip113-programmable-tokens-platform/src/substandards/security-token/`.
-> It is a port of [`FluidTokens/fn-bafin-cardano-sc`](https://github.com/FluidTokens/fn-bafin-cardano-sc)
-> targeting the German BaFin / Swiss regulated-securities use case. The substandard's
-> own `aiken.toml` records the origin as "ported from easy1staking-com/fn-bafin-cardano-sc";
-> that path is unverified, and the history containing the assessed upstream commit is
-> hosted under FluidTokens.
+> **This is a filled copy of [`CMTAT-equivalency-assessment/README.md`](./CMTAT-equivalency-assessment/README.md) (assessment template `v0.2.0`).** The *implementation being approved* is the **`security-token`** substandard of the Cardano Foundation **CIP-113 Programmable Tokens Platform**, i.e. the Aiken validators under `cip113-programmable-tokens-platform/src/substandards/security-token/`. It is a port of [`FluidTokens/fn-bafin-cardano-sc`](https://github.com/FluidTokens/fn-bafin-cardano-sc) targeting the German BaFin / Swiss regulated-securities use case. The substandard's own `aiken.toml` records the origin as "ported from easy1staking-com/fn-bafin-cardano-sc"; that path is unverified, and the history containing the assessed upstream commit is hosted under FluidTokens.
 
 ## Table of Contents
 
@@ -303,14 +294,7 @@ You MAY still add self-burn in your version if it fits your legal or business co
 
 ## Supplementary features
 
-> Features present in this implementation beyond the CMTAT baseline:
-> - **Tiered, TTL-bound, off-chain KYC attestations** (`tier_user` / `tier_institutional` / `tier_vlei`), verified on-chain via Ed25519 (`AttestationProof`) or MPF membership proof (`MembershipProof`), and **network-bound** to prevent cross-network replay.
-> - **Toggleable receiver-KYC** (`SetRequiresReceiverKyc`) — the issuer can require KYC of recipients or gate only senders.
-> - **Rotatable admin with dual-signature handover** (`RotateAdmin`) — mitigates silent takeover and lost-key soft-brick.
-> - **On-chain supply cap** (`mintable_amount`) enforced atomically with each mint via the GlobalState UTxO.
-> - **eUTXO-native batch mint/transfer** — a single transaction can create/move tokens across many holders.
-> - **Griefing-hardened credential registration** — the withdraw-0 stake credentials whitelist `RegisterCredential` only (reject `UnregisterCredential`) to prevent a de-registration DoS.
-> - **BaFin `SecurityInfo` regulatory metadata** block for German/EU regulated-securities disclosure.
+> Features present in this implementation beyond the CMTAT baseline: - **Tiered, TTL-bound, off-chain KYC attestations** (`tier_user` / `tier_institutional` / `tier_vlei`), verified on-chain via Ed25519 (`AttestationProof`) or MPF membership proof (`MembershipProof`), and **network-bound** to prevent cross-network replay. - **Toggleable receiver-KYC** (`SetRequiresReceiverKyc`) — the issuer can require KYC of recipients or gate only senders. - **Rotatable admin with dual-signature handover** (`RotateAdmin`) — mitigates silent takeover and lost-key soft-brick. - **On-chain supply cap** (`mintable_amount`) enforced atomically with each mint via the GlobalState UTxO. - **eUTXO-native batch mint/transfer** — a single transaction can create/move tokens across many holders. - **Griefing-hardened credential registration** — the withdraw-0 stake credentials whitelist `RegisterCredential` only (reject `UnregisterCredential`) to prevent a de-registration DoS. - **BaFin `SecurityInfo` regulatory metadata** block for German/EU regulated-securities disclosure.
 
 ## Reference
 

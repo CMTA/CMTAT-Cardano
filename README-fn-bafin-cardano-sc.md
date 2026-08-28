@@ -1,24 +1,10 @@
 # CMTAT Equivalency Assessment — `fn-bafin-cardano-sc` (upstream BaFin Cardano contracts)
 
-> **This is a filled copy of [`CMTAT-equivalency-assessment/README.md`](./CMTAT-equivalency-assessment/README.md) (assessment template `v0.2.0`).**
-> The *implementation being approved* is **[`FluidTokens/fn-bafin-cardano-sc`](https://github.com/FluidTokens/fn-bafin-cardano-sc)**,
-> the standalone Aiken contract set for BaFin-compliant security tokens on Cardano
-> (package namespace `ft/bafin`). It follows the **Harmonic Labs CIP-113**
-> draft (Michele Nuzzi, Matteo Coppola, Phil DiSarro).
+> **This is a filled copy of [`CMTAT-equivalency-assessment/README.md`](./CMTAT-equivalency-assessment/README.md) (assessment template `v0.2.0`).** The *implementation being approved* is **[`FluidTokens/fn-bafin-cardano-sc`](https://github.com/FluidTokens/fn-bafin-cardano-sc)**, the standalone Aiken contract set for BaFin-compliant security tokens on Cardano (package namespace `ft/bafin`). It follows the **Harmonic Labs CIP-113** draft (Michele Nuzzi, Matteo Coppola, Phil DiSarro).
 >
-> **Provenance note.** The CF substandard's own `aiken.toml` describes itself as
-> "ported from easy1staking-com/fn-bafin-cardano-sc". That string is the only
-> source for that name; it has not been verified to resolve as a GitHub path, and
-> neither this codebase nor the CF platform's Aiken sources mention it anywhere
-> else. The history containing the assessed commit is hosted under **FluidTokens**,
-> which is what this repository's submodule tracks and what is cited above.
+> **Provenance note.** The CF substandard's own `aiken.toml` describes itself as "ported from easy1staking-com/fn-bafin-cardano-sc". That string is the only source for that name; it has not been verified to resolve as a GitHub path, and neither this codebase nor the CF platform's Aiken sources mention it anywhere else. The history containing the assessed commit is hosted under **FluidTokens**, which is what this repository's submodule tracks and what is cited above.
 >
-> This is the **upstream** codebase that the Cardano Foundation CIP-113
-> `security-token` substandard was ported from (see
-> [`README-cip113-security-token.md`](./README-cip113-security-token.md)).
-> The two are functionally close; the sections below flag the divergences, chiefly
-> around the **denylist access-control model** and the **absence of the platform
-> integration rubber-stamps**.
+> This is the **upstream** codebase that the Cardano Foundation CIP-113 `security-token` substandard was ported from (see [`README-cip113-security-token.md`](./README-cip113-security-token.md)). The two are functionally close; the sections below flag the divergences, chiefly around the **denylist access-control model** and the **absence of the platform integration rubber-stamps**.
 
 ## Table of Contents
 
@@ -329,15 +315,7 @@ You MAY still add self-burn in your version if it fits your legal or business co
 
 ## Supplementary features
 
-> Features present in this implementation beyond the CMTAT baseline:
-> - **Tiered, TTL-bound, off-chain KYC attestations** (`tier_user` / `tier_institutional` / `tier_vlei`), verified on-chain via Ed25519 (`AttestationProof`) or MPF membership proof (`MembershipProof`), **network-bound** via the immutable GS `network_id` field.
-> - **Delegable sanctions role** — a power user with `is_admin` can add/remove denylist entries without the master admin key.
-> - **Toggleable receiver-KYC** (`SetRequiresReceiverKyc`).
-> - **Rotatable master admin with dual-signature handover** (`RotateAdmin`).
-> - **On-chain supply cap** (`mintable_amount`) enforced atomically with each mint via the GlobalState UTxO.
-> - **eUTXO-native batch mint/transfer.**
-> - **Griefing-hardened credential registration** — the withdraw-0 stake credentials whitelist `RegisterCredential` only (reject `UnregisterCredential`).
-> - **BaFin `SecurityInfo` regulatory metadata** block for German/EU regulated-securities disclosure.
+> Features present in this implementation beyond the CMTAT baseline: - **Tiered, TTL-bound, off-chain KYC attestations** (`tier_user` / `tier_institutional` / `tier_vlei`), verified on-chain via Ed25519 (`AttestationProof`) or MPF membership proof (`MembershipProof`), **network-bound** via the immutable GS `network_id` field. - **Delegable sanctions role** — a power user with `is_admin` can add/remove denylist entries without the master admin key. - **Toggleable receiver-KYC** (`SetRequiresReceiverKyc`). - **Rotatable master admin with dual-signature handover** (`RotateAdmin`). - **On-chain supply cap** (`mintable_amount`) enforced atomically with each mint via the GlobalState UTxO. - **eUTXO-native batch mint/transfer.** - **Griefing-hardened credential registration** — the withdraw-0 stake credentials whitelist `RegisterCredential` only (reject `UnregisterCredential`). - **BaFin `SecurityInfo` regulatory metadata** block for German/EU regulated-securities disclosure.
 
 ## Reference
 
