@@ -243,9 +243,7 @@ For CMTAT reference implementations, `tokenId` SHOULD be included.
 
 > **How the sanction is represented, and what it costs to check.** Membership *is* the sanction — there is no per-address boolean anywhere. Absence is what every transfer must prove, by referencing the *covering* node whose key and link strictly bracket the party being vetted; a node keyed exactly at that hash makes both bounds fail, so the proof cannot be built at all. Keys are length-checked at insertion, so a malformed key cannot silently leave a sanction unenforceable.
 >
-> Two design choices worth recording:
->
-> - **Keyed on the bare hash**, so sanctioning a hash sanctions both the verification-key and script credential forms of it. This is the conservative direction, and the deliberate opposite of the KYC path, which distinguishes the two forms (ID 20). It is the one respect in which the denylist reaches further than a CMTAT freeze, which is keyed to a single `address`.
+> - **Keyed on the bare hash**, so sanctioning a hash sanctions both the verification-key and script credential forms of it. This is the conservative direction, and the deliberate opposite of the KYC path, which distinguishes the two forms (ID 20). It is the one respect in which the denylist is broader than a CMTAT freeze, which is keyed to a single `address`.
 > - **No `spender` to check.** CMTAT also blocks a frozen *delegate* in `transferFrom`. There is no analogue here because there is no allowance model (ID 11): a spend is authorised by the UTxO's own credential, which is already vetted as the sender.
 > - **Delegated to `is_admin`** rather than the master admin, so a compliance function can be granted without handing over protocol control. Contrast the CF `security-token` substandard, where the same operation needed the master admin key.
 >
@@ -377,7 +375,7 @@ unfreeze(address targetAddress)
 > - forced transfers *to* a denylisted destination are blocked (though not *from* one — see ID 17);
 > - an ordinary **burn** of that holder's tokens is blocked too, since a burn re-enters the sender-side transfer logic.
 >
-> Two design points worth knowing when building transactions:
+> Worth knowing when building transactions:
 >
 > - the denylist keys on the **bare hash**, so sanctioning a hash sanctions both the verification-key and script credential forms — the conservative direction, where the KYC path deliberately distinguishes them;
 > - the covering node is authenticated once per *run* of adjacent parties citing it, so keep parties that share a node adjacent in the action lists.
@@ -431,7 +429,7 @@ With the CMTAT Solidity version, when `forcedTransfer` is available, `forcedBurn
 
 ##### Note
 
-> This implementation provides **both**, and satisfies the "tokens from a frozen wallet MUST NOT be burnable in the standard burn function" requirement — which the CF `security-token` substandard did not, because it short-circuited the transfer hook for mint and burn outright, and which `fn-bafin-cardano-sc` was only expected to, on an assumption about base-layer behaviour its assessment could not verify. The reason is structural rather than a new check: destroying existing supply spends a programmable-base UTxO, and the CIP-113 base layer gates every such spend on this deployment's transfer logic (via `TransferAct`), which requires a sender-side denylist-absence proof, sender KYC where enabled, and an unpaused protocol. Neither base-layer escape applies — `TokenDoesNotExist` needs a registry node covering the policy and a registered policy has none, and `UnfrackingAct` is unavailable because registration pins `unfracking_logic_script` to the empty vkey.
+> This implementation provides **both**, and satisfies the "tokens from a frozen wallet MUST NOT be burnable in the standard burn function" requirement — which the CF `security-token` substandard did not, because it short-circuited the transfer hook for mint and burn outright, and which `fn-bafin-cardano-sc` was only expected to, on an assumption about base-layer behaviour its assessment could not verify. No new check was added. Destroying existing supply spends a programmable-base UTxO, and the CIP-113 base layer gates every such spend on this deployment's transfer logic (via `TransferAct`), which requires a sender-side denylist-absence proof, sender KYC where enabled, and an unpaused protocol. Neither base-layer escape applies — `TokenDoesNotExist` needs a registry node covering the policy and a registered policy has none, and `UnfrackingAct` is unavailable because registration pins `unfracking_logic_script` to the empty vkey.
 >
 > The consequence is that the two CMTAT paths are **not** cleanly separated the way the guideline suggests. A burn of an *unsanctioned, cooperative* holder's tokens while unpaused is a pure `forcedBurn` (`can_burn`, no destination, does burn). A burn of a *sanctioned or uncooperative* holder's tokens, or any burn during a pause, must be carried on the seizure path — so `forcedTransfer` **does** burn in that shape, and requires `can_force_transfer` in addition to `can_burn`. Grant both roles together to whoever is expected to execute court- or regulator-ordered cancellations. Code size is not a binding constraint on Cardano, so keeping the two validators separate remains intentional.
 
@@ -550,11 +548,11 @@ The denylist is this implementation's freeze (IDs 15, 16). Sanction is *presence
 
 ![Activity diagram: a sanctioned holder spends their own token UTxO; the CIP-113 base layer dispatches TransferAct to transfer_logic_validator, which authenticates GlobalState, rejects enterprise addresses, checks the pause and deactivation flags, then fails at the sender-side denylist absence proof because a node keyed at the holder's hash makes a covering node impossible](./assets/article/blockchain/cardano/cpt-rwa-ch-de-cmta-reference-denylist-rejection-workflow.png)
 
-Two consequences worth reading off the diagram. Sanction blocks **both directions** — the same absence proof is demanded of every destination, so a denylisted address can neither send nor receive. That matches CMTAT, whose `ValidationModule` checks `from` and `to` alike. And because the check keys on the bare hash, sanctioning a hash sanctions both its verification-key and script credential forms. The only route by which a sanctioned position moves is `third_party_transfer_logic_validator`, the seizure path, which runs no source-side checks and requires a power user holding `can_force_transfer` (ID 17).
+Sanction blocks **both directions** — the same absence proof is demanded of every destination, so a denylisted address can neither send nor receive. That matches CMTAT, whose `ValidationModule` checks `from` and `to` alike. And because the check keys on the bare hash, sanctioning a hash sanctions both its verification-key and script credential forms. The only route by which a sanctioned position moves is `third_party_transfer_logic_validator`, the seizure path, which runs no source-side checks and requires a power user holding `can_force_transfer` (ID 17).
 
 ### Denied transfer: a paused protocol
 
-The pause is a single flag in the authenticated GlobalState datum, and `transfer_logic_validator` requires it to be `False`. What decides whether a given operation is stopped is not its name but whether it **spends a programmable-base UTxO** — because only then does the CIP-113 base layer dispatch to the transfer logic at all.
+The pause is a single flag in the authenticated GlobalState datum, and `transfer_logic_validator` requires it to be `False`. An operation is stopped only if it **spends a programmable-base UTxO**, because only then does the CIP-113 base layer dispatch to the transfer logic at all. What the operation is called has nothing to do with it.
 
 ![Activity diagram: with transfers_paused set, an operation that spends no programmable-base UTxO is a fresh mint and is allowed, while one that does is dispatched by the base layer either to transfer_logic_validator, which rejects on the pause flag and therefore also blocks a standard burn, or to the seizure path, which has no pause gate and is allowed](./assets/article/blockchain/cardano/cpt-rwa-ch-de-cmta-reference-pause-rejection-workflow.png)
 
