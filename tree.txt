@@ -20,3 +20,7 @@ _posts/2026-08-26-cardano-cmta-swiss-german-profiles.md
   - assets/article/blockchain/cardano/cpt-rwa-ch-de-cmta-reference-architecture-concept.puml  [concept]   -> in-section (permanent proxy / swappable authority)
   - assets/article/blockchain/cardano/cpt-rwa-ch-de-cmta-reference-burn-workflow.puml         [workflow]  -> in-section (two behaviours nobody wrote)
   - assets/article/blockchain/cardano/cpt-rwa-ch-de-cmta-reference-lifecycle-state.puml       [state]     -> in-section (one-way lock and terminal state)
+
+README-cpt-rwa-ch-de-cmta-reference.md   (assessment, not an article)
+  - assets/article/blockchain/cardano/cpt-rwa-ch-de-cmta-reference-denylist-rejection-workflow.puml  [workflow]  -> in-section (Annex / sanctioned holder)
+  - assets/article/blockchain/cardano/cpt-rwa-ch-de-cmta-reference-pause-rejection-workflow.puml     [workflow]  -> in-section (Annex / paused protocol)

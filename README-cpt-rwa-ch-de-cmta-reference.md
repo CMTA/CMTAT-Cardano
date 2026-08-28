@@ -34,6 +34,10 @@
   - [State integrity](#state-integrity)
   - [Token metadata](#token-metadata)
   - [Operational evidence](#operational-evidence)
+- [Annex](#annex)
+  - [Terms](#terms)
+  - [Denied transfer: a sanctioned holder](#denied-transfer-a-sanctioned-holder)
+  - [Denied transfer: a paused protocol](#denied-transfer-a-paused-protocol)
 - [Reference](#reference)
 
 ## Document Version
@@ -437,6 +441,52 @@ What the repository measures and pins, as distinct from what it enforces.
 - **Measured execution budget**: `aiken bench` scaling benchmarks for the transfer and seizure paths, published per-party costs, and conservative per-transaction party maxima at 25 % of the shared CIP-113 budget.
 - **Regression suite** (`validators/regression.ak`) pinning every fixed defect, with positive controls paired to each negative test.
 - **eUTXO-native batch mint/transfer** — a single transaction can create or move tokens across many holders, subject to the budget limits above.
+
+## Annex
+
+### Terms
+
+Cardano concepts a reader coming from Solidity needs in order to follow the tables above. Terms are defined as this implementation uses them, not in full generality.
+
+| Term | Definition |
+|---|---|
+| **eUTXO** | Cardano's ledger model. There are no accounts and no contract storage: value lives in discrete *unspent transaction outputs*, and a transaction consumes some and creates others. A holder's balance is a **set** of UTxOs, not an integer — which is why `balanceOf`, `totalSupply` and amount-scoped freezes have no direct form here (IDs 6, 7, 18). |
+| **UTxO** | One unspent output: an address, a value (ADA plus any native assets), and optionally a datum. Spending it requires satisfying its address's credential. |
+| **Native asset** | A token the ledger tracks natively, identified by a **policy id** (28-byte hash of its minting script) plus an **asset name**. No token contract exists; the ledger enforces conservation. Quantities are integers, which is what makes "no fractions" (ID 4) hold by construction. |
+| **Minting policy** | The script that authorises creating or destroying units of its own policy id. A **negative mint** is a burn. |
+| **Validator / Plutus script** | A pure on-chain predicate that either accepts or rejects the transaction spending, minting, or withdrawing under it. It is *not* a node, a validator stake pool, or a network participant — the issuer deploys these scripts themselves, and nobody "approves" anything. |
+| **Plutus V3** | The script interpreter version these contracts compile to. **Aiken** is the source language; `aiken.toml` pins the compiler. |
+| **Datum** | Data attached to a UTxO. An **inline datum** stores it in the output directly. This is the only mutable state available: changing it means spending the UTxO and re-creating it with new contents. |
+| **Redeemer** | Data the spender supplies with the transaction, naming which branch of a validator to take and where to find things. It is an argument, never an authority — a redeemer claim must be checked against the transaction. |
+| **Credential** | Either a `VerificationKey(hash)` or a `Script(hash)`. An **address** carries a payment credential and, usually, a **stake credential**. Under CIP-113 the *stake* credential is the holder identity, which is why an **enterprise address** — one with no stake credential — is rejected by both transfer paths. |
+| **Reference input** | A UTxO a transaction reads without spending. Used here to prove denylist absence and to read power-user roles. Conway forbids a UTxO being both spent and referenced in one transaction, which is why several redeemers carry a `GlobalStateLocation` instead of a fixed index. |
+| **Withdraw-0** | A zero-ADA reward withdrawal included purely to force a script to run once per transaction. This is how CIP-113 invokes transfer logic: it is the eUTXO equivalent of a CMTAT transfer hook or RuleEngine call. |
+| **State thread / NFT-authenticated UTxO** | A UTxO made unique and unforgeable by holding a one-of-a-kind token. `GlobalStateDatum` is authenticated this way — finding the NFT *is* the proof the datum is genuine. |
+| **On-chain linked list** | eUTXO has no mapping type, so a set is built as ordered nodes, each a UTxO keyed by a hash and linking to the next. Membership is presence of a node; **absence** is proved by referencing the *covering* node whose key and link strictly bracket the target. Used for the denylist and the power-users list. |
+| **MPF (Merkle Patricia Forestry)** | A hash tree whose root fits in one datum field, letting membership be proved by an inclusion proof instead of an on-chain node per member. The alternative KYC mechanism to signed attestations. |
+| **Ed25519** | The signature scheme used both by the ledger for transaction signatures and, here, by trusted entities signing off-chain KYC attestations verified inside the validator. |
+| **Validity range** | The slot window in which a transaction may be accepted. A TTL is enforced by requiring the range's **upper bound** to be finite and no later than the attestation's expiry — an on-chain script cannot read "now". |
+| **Execution units** | The CPU and memory budget a transaction's scripts share (10 000 M CPU / 14 M memory). Memory binds first here, which is what caps parties per transfer. |
+| **CIP-68** | The metadata standard where a **reference NFT** holds a datum describing the token. This implementation's name and ticker (IDs 1, 2) live there. |
+| **CIP-113** | The programmable-token proposal this codebase targets. A **registry node** names the minting-logic and transfer-logic scripts for a policy; the **programmable-logic base** is the script address every such token must sit at, so that no transfer escapes its logic. The base layer is a deployment prerequisite and is **not** in this repository. |
+
+### Denied transfer: a sanctioned holder
+
+The denylist is this implementation's freeze (IDs 15, 16). Sanction is *presence* of a node in the ordered list keyed by the holder's 28-byte credential hash; every transfer proves *absence* by referencing a covering node whose key and link strictly bracket the party. When a node keyed exactly at that hash exists, both strict bounds fail, so no covering node can be produced and the proof simply cannot be built. Nothing needs to detect the sanction — the transaction is unconstructible.
+
+![Activity diagram: a sanctioned holder spends their own token UTxO; the CIP-113 base layer dispatches TransferAct to transfer_logic_validator, which authenticates GlobalState, rejects enterprise addresses, checks the pause and deactivation flags, then fails at the sender-side denylist absence proof because a node keyed at the holder's hash makes a covering node impossible](./assets/article/blockchain/cardano/cpt-rwa-ch-de-cmta-reference-denylist-rejection-workflow.png)
+
+Two consequences worth reading off the diagram. Sanction blocks **both directions** — the same absence proof is demanded of every destination, so a denylisted address can neither send nor receive, which is stricter than CMTAT's send-side freeze. And because the check keys on the bare hash, sanctioning a hash sanctions both its verification-key and script credential forms. The only route by which a sanctioned position moves is `third_party_transfer_logic_validator`, the seizure path, which runs no source-side checks and requires a power user holding `can_force_transfer` (ID 17).
+
+### Denied transfer: a paused protocol
+
+The pause is a single flag in the authenticated GlobalState datum, and `transfer_logic_validator` requires it to be `False`. What decides whether a given operation is stopped is not its name but whether it **spends a programmable-base UTxO** — because only then does the CIP-113 base layer dispatch to the transfer logic at all.
+
+![Activity diagram: with transfers_paused set, an operation that spends no programmable-base UTxO is a fresh mint and is allowed, while one that does is dispatched by the base layer either to transfer_logic_validator, which rejects on the pause flag and therefore also blocks a standard burn, or to the seizure path, which has no pause gate and is allowed](./assets/article/blockchain/cardano/cpt-rwa-ch-de-cmta-reference-pause-rejection-workflow.png)
+
+That single rule explains all three outcomes in the [Implementation Details](#implementation-details) table. A **mint** spends no such UTxO, so the transfer logic never runs and minting stays available — a deliberate divergence, pinned by a test. A **standard burn** does spend one, so it re-enters the paused transfer logic and is blocked in practice, even though nothing on the burn path reads the pause flag. **Seizure** is dispatched to `third_party_transfer_logic_validator`, which has no pause gate, so enforcement stays available; pairing it with a negative mint is the only way to retire a position mid-pause, and needs `can_force_transfer` **and** `can_burn`.
+
+Lifting the pause is `PauseTransfers { transfers_paused: False }` by a `can_pause` power user — unless the protocol has been deactivated, in which case the terminal guard rejects every GlobalState spend and the pause becomes permanent (ID 14).
 
 ## Reference
 
