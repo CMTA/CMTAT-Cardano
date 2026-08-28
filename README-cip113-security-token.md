@@ -53,6 +53,8 @@ An implementation MAY satisfy the CMTAT standard while still failing to meet the
 
 > **Additional warning specific to this implementation.** The CIP-113 platform is flagged by its own authors as **Research & Development / not production-ready / pending professional security audit**. This assessment is a *functional-mapping* exercise only; it does not constitute a security review or a legal opinion.
 
+Parts of this project, including this document, were written with the help of the AI coding assistant Claude Code (Anthropic).
+
 ## Architecture Primer (read first)
 
 This implementation is **not** an ERC-20-style contract with named methods. It is a set of **Aiken (Plutus V3) validators** operating on Cardano's **eUTXO** ledger, following the **CIP-113 programmable-token** pattern. Understanding the following mapping conventions is required to read the tables:

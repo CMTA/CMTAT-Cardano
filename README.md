@@ -8,6 +8,8 @@ Three Cardano codebases have nonetheless built the CMTAT feature set on top of [
 
 Nothing here is a security audit or a legal opinion. The assessments are functional mappings, and each one carries the audit status of the code it describes.
 
+Parts of this project were written with the help of the AI coding assistant Claude Code (Anthropic).
+
 ---
 
 ## The three codebases assessed

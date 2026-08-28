@@ -119,6 +119,8 @@ An implementation MAY satisfy the CMTAT standard while still failing to meet the
 > 3. This assessment is a **functional-mapping exercise only**. It is not a security review and not a legal opinion.
 > 4. **Two deployment properties no on-chain code can check** (recorded by the implementation itself) materially affect several `y` answers below: the GlobalState NFT must actually land at `global_state_spend_validator`'s address at genesis, and every role credential must name something that genuinely decides (the `must_be_signed_by_credential` helper accepts a script withdrawal, so a permissive script hash in any role field fails **open**, silently). Both must be verified off-chain, after genesis and after every rotation.
 
+Parts of this project, including this document, were written with the help of the AI coding assistant Claude Code (Anthropic).
+
 ## Relationship to the other assessments in this repository
 
 This implementation is the **successor** to the `security-token` substandard of the CIP-113 Programmable Tokens Platform (assessed in [`README-cip113-security-token.md`](./README-cip113-security-token.md)), which was itself a port of [`fn-bafin-cardano-sc`](./README-fn-bafin-cardano-sc.md). All three have now been assessed against the same template.

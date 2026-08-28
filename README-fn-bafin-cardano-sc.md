@@ -58,6 +58,8 @@ An implementation MAY satisfy the CMTAT standard while still failing to meet the
 
 > **Additional warning specific to this implementation.** `fn-bafin-cardano-sc` is a research/reference codebase (`version = "0.0.0"`) with no published external security audit. It targets a **draft** of CIP-113 that is still under active development. This assessment is a *functional-mapping* exercise only; it does not constitute a security review or a legal opinion.
 
+Parts of this project, including this document, were written with the help of the AI coding assistant Claude Code (Anthropic).
+
 ## Architecture Primer (read first)
 
 This implementation is **not** an ERC-20-style contract with named methods. It is a set of **Aiken (Plutus V3) validators** on Cardano's **eUTXO** ledger following the **CIP-113 programmable-token** pattern. The mapping conventions below are needed to read the tables.
