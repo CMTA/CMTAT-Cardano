@@ -1,8 +1,12 @@
 # CMTAT Equivalency Assessment — `cpt-rwa-ch-de-cmta-reference` (Cardano, Swiss/German profiles)
 
-This document answers one question: how much of the CMTAT security-token standard does this Cardano implementation actually provide?
+This document assesses how much of the CMTAT security-token standard the Cardano implementation `cpt-rwa-ch-de-cmta-reference` provides.
 
-It works through CMTA's own 54-item checklist and records, for each item, whether the behaviour exists, who may invoke it, and how it is enforced on-chain. It is written for an issuer, registrar or adviser deciding whether the codebase is a usable basis for a regulated token, and it assumes no Cardano background. [About CMTA and CMTAT](#about-cmta-and-cmtat) introduces the standard and its implementations; the [Architecture Primer](#architecture-primer-read-first) explains how a Solidity contract's methods map onto Cardano scripts; the [Annex](#annex) defines the vocabulary and walks through two worked examples of a refused transfer.
+It works through CMTA's own 54-item checklist and records, for each item, whether the behaviour exists, who may invoke it, and how it is enforced on-chain. It is written for an issuer, registrar or adviser deciding whether the codebase is a usable basis for a regulated token.
+
+- [About CMTA and CMTAT](#about-cmta-and-cmtat) introduces the standard and its implementations; 
+- The [Architecture Primer](#architecture-primer-read-first) explains how a Solidity contract's methods map onto Cardano scripts; 
+- The [Annex](#annex) defines the vocabulary and walks through two worked examples of a refused transfer.
 
 It is not a security audit and not a legal opinion. Read the [Warning](#warning) before relying on any answer below.
 
@@ -69,7 +73,7 @@ Implementations and specifications published or endorsed by CMTA:
 |---|---|---|---|
 | **EVM** (reference implementation) | Solidity | [`CMTA/CMTAT`](https://github.com/CMTA/CMTAT) | CMTA |
 | Tezos | SmartPy (FA2) | [`CMTA/CMTAT-Tezos-FA2`](https://github.com/CMTA/CMTAT-Tezos-FA2) | AirGap, with CMTA |
-| Aztec | Noir | [`taurushq-io/private-CMTAT-aztec`](https://github.com/taurushq-io/private-CMTAT-aztec) | Taurus, with CMTA |
+| Aztec | Noir | [`CMTA/private-CMTAT-aztec`](https://github.com/CMTA/private-CMTAT-aztec) | Taurus, with CMTA |
 | Solana | *specification only* | [`CMTA/CMTAT-Solana`](https://github.com/CMTA/CMTAT-Solana) | Taurus, as an internal CMTA project |
 
 **Cardano is not among them.** The three Cardano codebases in this repository's lineage are independent implementations assessed against the framework, not official CMTA ports. That is what this document exists to evaluate.
