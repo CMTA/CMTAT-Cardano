@@ -196,7 +196,7 @@ For CMTAT reference implementations, `tokenId` SHOULD be included.
 
 | ID   | Requirement | CMTAT Solidity corresponding feature                         | Access Control (CMTAT Solidity)               | Notes                                                        | Present in implementation being approved (`y/n`) | Access Control (implementation being approved) | Implementation details |
 |---|---|---|---|---|---|---|---|
-| 15   | Freeze      | `freeze` or `setAddressFrozen(true)` *(inferred from extracted PDF text)* | Role-restricted (compliance/admin authorized) | Must block transfers to and from a given address. Single-function implementations are acceptable if they set a frozen status. | y | **Power user with `is_admin`** (must sign); the flag itself is granted/revoked by the GS admin | Implemented as a **denylist** (blocklist), not a per-address flag: `denylist.ak` `mint` redeemer `AddToDenylist { user_pkh, .. }` inserts a node into an ordered linked list keyed by the holder's 28-byte credential hash. **Presence blocks both sending and receiving**, which is stricter than CMTAT freeze. Two functions (add/remove) rather than one `setAddressFrozen`. Unavailable once `deactivated`. See the note below. |
+| 15   | Freeze      | `freeze` or `setAddressFrozen(true)` *(inferred from extracted PDF text)* | Role-restricted (compliance/admin authorized) | Must block transfers to and from a given address. Single-function implementations are acceptable if they set a frozen status. | y | **Power user with `is_admin`** (must sign); the flag itself is granted/revoked by the GS admin | Implemented as a **denylist** (blocklist), not a per-address flag: `denylist.ak` `mint` redeemer `AddToDenylist { user_pkh, .. }` inserts a node into an ordered linked list keyed by the holder's 28-byte credential hash. **Presence blocks both sending and receiving**, matching CMTAT freeze. Two functions (add/remove) rather than one `setAddressFrozen`. Unavailable once `deactivated`. See the note below. |
 | 16   | Unfreeze    | `unfreeze` or `setAddressFrozen(false)` *(inferred from extracted PDF text)* | Role-restricted (compliance/admin authorized) | Single-function implementations are acceptable if they clear a frozen status. | y | **Power user with `is_admin`** (must sign) | `RemoveFromDenylist { user_pkh, .. }` removes the node. Same authority and same deactivation gate. |
 
 ##### Note
@@ -205,7 +205,8 @@ For CMTAT reference implementations, `tokenId` SHOULD be included.
 >
 > Two design choices worth recording:
 >
-> - **Keyed on the bare hash**, so sanctioning a hash sanctions both the verification-key and script credential forms of it. This is the conservative direction, and the deliberate opposite of the KYC path, which distinguishes the two forms (ID 20).
+> - **Keyed on the bare hash**, so sanctioning a hash sanctions both the verification-key and script credential forms of it. This is the conservative direction, and the deliberate opposite of the KYC path, which distinguishes the two forms (ID 20). It is the one respect in which the denylist reaches further than a CMTAT freeze, which is keyed to a single `address`.
+> - **No `spender` to check.** CMTAT also blocks a frozen *delegate* in `transferFrom`. There is no analogue here because there is no allowance model (ID 11): a spend is authorised by the UTxO's own credential, which is already vetted as the sender.
 > - **Delegated to `is_admin`** rather than the master admin, so a compliance function can be granted without handing over protocol control. Contrast the CF `security-token` substandard, where the same operation needed the master admin key.
 >
 > Both transfer paths demand the absence proof for every party, which is why the denylist also blocks *receiving* and, since a burn re-enters the sender-side transfer logic, blocks an ordinary burn of that holder's tokens. The [Annex](#denied-transfer-a-sanctioned-holder) traces the whole rejection.
@@ -331,7 +332,7 @@ unfreeze(address targetAddress)
 
 > This implementation uses the **two-function** form via the denylist mint validator: `AddToDenylist { user_pkh, .. }` and `RemoveFromDenylist { user_pkh, .. }`, both gated on a power user holding `is_admin` plus their signature. "Frozen status" is **presence of a node** in an ordered linked list keyed by the 28-byte credential hash; absence is proven at transfer time by a *covering-node* reference input.
 >
-> Semantics are stricter than CMTAT's send-side freeze. A denylisted address can **neither send nor receive**, which means:
+> Semantics match CMTAT's freeze rather than exceeding it. CMTAT v3.2.0 is not send-side only: `ValidationModule._canTransferisFrozen` blocks a standard transfer if `spender`, `from` **or** `to` is frozen, `_canMintBurnByModule` refuses to mint *to* a frozen address, and refuses to burn *from* one. A denylisted address here can likewise **neither send nor receive**, which means:
 >
 > - forced transfers *to* a denylisted destination are blocked (though not *from* one — see ID 17);
 > - an ordinary **burn** of that holder's tokens is blocked too, since a burn re-enters the sender-side transfer logic.
@@ -509,7 +510,7 @@ The denylist is this implementation's freeze (IDs 15, 16). Sanction is *presence
 
 ![Activity diagram: a sanctioned holder spends their own token UTxO; the CIP-113 base layer dispatches TransferAct to transfer_logic_validator, which authenticates GlobalState, rejects enterprise addresses, checks the pause and deactivation flags, then fails at the sender-side denylist absence proof because a node keyed at the holder's hash makes a covering node impossible](./assets/article/blockchain/cardano/cpt-rwa-ch-de-cmta-reference-denylist-rejection-workflow.png)
 
-Two consequences worth reading off the diagram. Sanction blocks **both directions** — the same absence proof is demanded of every destination, so a denylisted address can neither send nor receive, which is stricter than CMTAT's send-side freeze. And because the check keys on the bare hash, sanctioning a hash sanctions both its verification-key and script credential forms. The only route by which a sanctioned position moves is `third_party_transfer_logic_validator`, the seizure path, which runs no source-side checks and requires a power user holding `can_force_transfer` (ID 17).
+Two consequences worth reading off the diagram. Sanction blocks **both directions** — the same absence proof is demanded of every destination, so a denylisted address can neither send nor receive. That matches CMTAT, whose `ValidationModule` checks `from` and `to` alike. And because the check keys on the bare hash, sanctioning a hash sanctions both its verification-key and script credential forms. The only route by which a sanctioned position moves is `third_party_transfer_logic_validator`, the seizure path, which runs no source-side checks and requires a power user holding `can_force_transfer` (ID 17).
 
 ### Denied transfer: a paused protocol
 
