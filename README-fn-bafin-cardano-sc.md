@@ -315,7 +315,15 @@ You MAY still add self-burn in your version if it fits your legal or business co
 
 ## Supplementary features
 
-> Features present in this implementation beyond the CMTAT baseline: - **Tiered, TTL-bound, off-chain KYC attestations** (`tier_user` / `tier_institutional` / `tier_vlei`), verified on-chain via Ed25519 (`AttestationProof`) or MPF membership proof (`MembershipProof`), **network-bound** via the immutable GS `network_id` field. - **Delegable sanctions role** — a power user with `is_admin` can add/remove denylist entries without the master admin key. - **Toggleable receiver-KYC** (`SetRequiresReceiverKyc`). - **Rotatable master admin with dual-signature handover** (`RotateAdmin`). - **On-chain supply cap** (`mintable_amount`) enforced atomically with each mint via the GlobalState UTxO. - **eUTXO-native batch mint/transfer.** - **Griefing-hardened credential registration** — the withdraw-0 stake credentials whitelist `RegisterCredential` only (reject `UnregisterCredential`). - **BaFin `SecurityInfo` regulatory metadata** block for German/EU regulated-securities disclosure.
+> Features present in this implementation beyond the CMTAT baseline:
+> - **Tiered, TTL-bound, off-chain KYC attestations** (`tier_user` / `tier_institutional` / `tier_vlei`), verified on-chain via Ed25519 (`AttestationProof`) or MPF membership proof (`MembershipProof`), **network-bound** via the immutable GS `network_id` field.
+> - **Delegable sanctions role** — a power user with `is_admin` can add/remove denylist entries without the master admin key.
+> - **Toggleable receiver-KYC** (`SetRequiresReceiverKyc`).
+> - **Rotatable master admin with dual-signature handover** (`RotateAdmin`).
+> - **On-chain supply cap** (`mintable_amount`) enforced atomically with each mint via the GlobalState UTxO.
+> - **eUTXO-native batch mint/transfer.**
+> - **Griefing-hardened credential registration** — the withdraw-0 stake credentials whitelist `RegisterCredential` only (reject `UnregisterCredential`).
+> - **BaFin `SecurityInfo` regulatory metadata** block for German/EU regulated-securities disclosure.
 
 ## Reference
 

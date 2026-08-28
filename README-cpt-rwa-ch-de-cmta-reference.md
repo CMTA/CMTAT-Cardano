@@ -29,6 +29,11 @@
   - [Implementation Details](#implementation-details)
   - [Self-Burn](#self-burn)
 - [Supplementary features](#supplementary-features)
+  - [Lifecycle and governance](#lifecycle-and-governance)
+  - [Compliance gating](#compliance-gating)
+  - [State integrity](#state-integrity)
+  - [Token metadata](#token-metadata)
+  - [Operational evidence](#operational-evidence)
 - [Reference](#reference)
 
 ## Document Version
@@ -139,7 +144,8 @@ For CMTAT reference implementations, `tokenId` SHOULD be included.
 >
 > That leaves two routes, and which one is available depends on the holder and the pause state:
 >
-> - **Standard route** — an unsanctioned, cooperative holder while transfers are unpaused. `transfer_logic_validator` passes, then `minting_authority_validator`'s `MintBurn` branch requires `can_burn` plus that operator's signature, and GlobalState is spent so its `MintSecurity` branch credits the burned amount back to `mintable_amount`. **Role needed: `can_burn`.** - **Seizure route** — a sanctioned or uncooperative holder, or any burn during a pause. The transaction takes `third_party_transfer_logic_validator` instead, which performs **no source-side checks** and has **no pause gate**, requiring only `can_force_transfer`, that operator's signature, and at least one spent input carrying the security token. The minting authority still runs and still demands `can_burn`. **Roles needed: `can_force_transfer` *and* `can_burn`.**
+> - **Standard route** — an unsanctioned, cooperative holder while transfers are unpaused. `transfer_logic_validator` passes, then `minting_authority_validator`'s `MintBurn` branch requires `can_burn` plus that operator's signature, and GlobalState is spent so its `MintSecurity` branch credits the burned amount back to `mintable_amount`. **Role needed: `can_burn`.**
+> - **Seizure route** — a sanctioned or uncooperative holder, or any burn during a pause. The transaction takes `third_party_transfer_logic_validator` instead, which performs **no source-side checks** and has **no pause gate**, requiring only `can_force_transfer`, that operator's signature, and at least one spent input carrying the security token. The minting authority still runs and still demands `can_burn`. **Roles needed: `can_force_transfer` *and* `can_burn`.**
 >
 > The seizure route burns rather than moves because of what the destination scan sees: with a negative mint and no output carrying the security token, the unique-destination list is empty, so there are no destinations to vet and the seizure withdrawal is satisfied by the seized input alone.
 >
@@ -195,7 +201,9 @@ For CMTAT reference implementations, `tokenId` SHOULD be included.
 >
 > **Three constructions recover the effect on Cardano generally**, none of them implemented here:
 >
-> - **UTxO partitioning.** Hold the restricted tranche at a different credential (an escrow script, an issuer-controlled sub-account) and the free tranche at the holder's own. The restriction is custody rather than a flag, so it needs the holder's consent or an issuer-side move, and no party can read a "frozen" status off the chain. - **Per-holder account state.** An on-chain account node per holder recording total and frozen amounts, which every transfer must spend or reference. This rebuilds account semantics on eUTXO, at the cost of serialising that holder's transfers to roughly one per block, a min-ADA deposit per holder, heavier transfers, and soundness only if every unit is forced through the accounting. - **Time-locked tranche.** The locked UTxO's validator demands a validity-range lower bound past the unlock slot. This covers vesting and lock-ups rather than discretionary compliance holds, and is not revocable early.
+> - **UTxO partitioning.** Hold the restricted tranche at a different credential (an escrow script, an issuer-controlled sub-account) and the free tranche at the holder's own. The restriction is custody rather than a flag, so it needs the holder's consent or an issuer-side move, and no party can read a "frozen" status off the chain.
+> - **Per-holder account state.** An on-chain account node per holder recording total and frozen amounts, which every transfer must spend or reference. This rebuilds account semantics on eUTXO, at the cost of serialising that holder's transfers to roughly one per block, a min-ADA deposit per holder, heavier transfers, and soundness only if every unit is forced through the accounting.
+> - **Time-locked tranche.** The locked UTxO's validator demands a validity-range lower bound past the unlock slot. This covers vesting and lock-ups rather than discretionary compliance holds, and is not revocable early.
 >
 > **The settlement case is partly answered by the ledger.** The template scopes this functionality to "block a sold amount to avoid double-spend during settlement". Under eUTXO the seller's UTxO is an input to the settlement transaction and cannot be spent twice, so double-*settlement* is prevented by the ledger with no freeze flag involved. What that does not prevent is reneging: the seller may still spend the UTxO in a competing transaction, invalidating the settlement rather than double-spending it. Preventing that needs escrow, which is the first construction above.
 >
@@ -356,7 +364,50 @@ You MAY still add self-burn in your version if it fits your legal or business co
 
 ## Supplementary features
 
-> Features present in this implementation beyond the CMTAT baseline: - **Irreversible decommissioning switch** (`DeactivateContract`) with a terminal guard that makes the GlobalState UTxO permanently unspendable, satisfying CMTAT ID 14 and supporting both the *cancelled* and *immobilised* readings of the CMTA spec. - **One-way upgrade lock** (`LockUpgrades`) — an on-chain, admin-compromise-proof commitment that the token's mint and transfer rules are final. - **Swappable minting authority behind a permanent proxy** (`RotateMintingScript`) — an eUTXO analogue of a proxy upgrade, with the five invariants any replacement must preserve documented in-code. - **Governed transfer-logic upgrade** (`UpgradeRegistryNode`) that re-asserts this deployment's own invariants over the base layer's freer registry semantics. - **Independently toggleable sender and receiver KYC** (`SetRequiresSenderKyc` / `SetRequiresReceiverKyc`). - **Tiered, TTL-bound, off-chain KYC attestations** (`tier_user` / `tier_institutional` / `tier_vlei`), verified on-chain via Ed25519 or an MPF membership proof, **network-bound** and **policy-bound** to prevent replay, with the TTL checked against the transaction's validity-range upper bound (a non-`Finite` bound is rejected). - **Credential-form binding**: a KYC attestation names whether it was issued for a verification key or a script, and is rejected for the other form — closing a holder-identification defect under eWpG §14. The denylist deliberately goes the other way, sanctioning both forms of a hash. - **Rotatable admin with dual-signature handover** (`RotateAdmin`). - **On-chain supply cap** (`mintable_amount`) enforced atomically with each mint, backed by two structural guards: non-`MintSecurity` branches forbid concurrent security-token mints, and admin actions may not move the security token at all in the same transaction (closing pre-state atomicity bypasses). - **Revocation that sticks**: every power-user node read is pinned to the list's spend address, so a node NFT removed from the list cannot keep authenticating stale role flags. - **Datum growth caps** (≤ 64 trusted entities, ≤ 4 096 B `security_info`, ≤ 512 B per entity metadata) enforced at genesis and on every mutation. - **Genesis sanitisation** of the initial datum: born unpaused, born unlocked, born active, 28-byte credential hashes, in-range `network_id`, well-formed membership root, sorted duplicate-free TEL, and two *distinct* linked-list policy ids both minted in the genesis transaction. - **Griefing-hardened credential registration**: all four withdraw-0 validators whitelist `RegisterCredential` only, so a third party cannot de-register a stake credential and brick the protocol. - **CIP-68 reference NFT** for token metadata, minted once at registration and pinned to the admin credential. - **Measured execution budget**: `aiken bench` scaling benchmarks for the transfer and seizure paths, published per-party costs, and conservative per-transaction party maxima at 25 % of the shared CIP-113 budget. - **Regression suite** (`validators/regression.ak`) pinning every fixed defect, with positive controls paired to each negative test. - **eUTXO-native batch mint/transfer** — a single transaction can create or move tokens across many holders, subject to the budget limits above. - **`SecurityInfo` regulatory metadata** block for eWpG/German and Swiss disclosure.
+Features present in this implementation beyond the CMTAT baseline, grouped by what they govern.
+
+### Lifecycle and governance
+
+The token has a defined end state and two bounded upgrade paths, each closable on purpose.
+
+- **Irreversible decommissioning switch** (`DeactivateContract`) with a terminal guard that makes the GlobalState UTxO permanently unspendable, satisfying CMTAT ID 14 and supporting both the *cancelled* and *immobilised* readings of the CMTA spec.
+- **One-way upgrade lock** (`LockUpgrades`) — an on-chain, admin-compromise-proof commitment that the token's mint and transfer rules are final.
+- **Swappable minting authority behind a permanent proxy** (`RotateMintingScript`) — an eUTXO analogue of a proxy upgrade, with the five invariants any replacement must preserve documented in-code.
+- **Governed transfer-logic upgrade** (`UpgradeRegistryNode`) that re-asserts this deployment's own invariants over the base layer's freer registry semantics.
+- **Rotatable admin with dual-signature handover** (`RotateAdmin`).
+
+### Compliance gating
+
+Who may hold and move the token is decided by off-chain attestations checked on-chain, with each side of a transfer independently controllable.
+
+- **Independently toggleable sender and receiver KYC** (`SetRequiresSenderKyc` / `SetRequiresReceiverKyc`).
+- **Tiered, TTL-bound, off-chain KYC attestations** (`tier_user` / `tier_institutional` / `tier_vlei`), verified on-chain via Ed25519 or an MPF membership proof, **network-bound** and **policy-bound** to prevent replay, with the TTL checked against the transaction's validity-range upper bound (a non-`Finite` bound is rejected).
+- **Credential-form binding**: a KYC attestation names whether it was issued for a verification key or a script, and is rejected for the other form — closing a holder-identification defect under eWpG §14. The denylist deliberately goes the other way, sanctioning both forms of a hash.
+
+### State integrity
+
+Supply, roles and the GlobalState datum are constrained at genesis and on every mutation, so no single transaction can leave the protocol in a state its rules did not authorise.
+
+- **On-chain supply cap** (`mintable_amount`) enforced atomically with each mint, backed by two structural guards: non-`MintSecurity` branches forbid concurrent security-token mints, and admin actions may not move the security token at all in the same transaction (closing pre-state atomicity bypasses).
+- **Revocation that sticks**: every power-user node read is pinned to the list's spend address, so a node NFT removed from the list cannot keep authenticating stale role flags.
+- **Datum growth caps** (≤ 64 trusted entities, ≤ 4 096 B `security_info`, ≤ 512 B per entity metadata) enforced at genesis and on every mutation.
+- **Genesis sanitisation** of the initial datum: born unpaused, born unlocked, born active, 28-byte credential hashes, in-range `network_id`, well-formed membership root, sorted duplicate-free TEL, and two *distinct* linked-list policy ids both minted in the genesis transaction.
+- **Griefing-hardened credential registration**: all four withdraw-0 validators whitelist `RegisterCredential` only, so a third party cannot de-register a stake credential and brick the protocol.
+
+### Token metadata
+
+Two carriers, neither parsed by any validator.
+
+- **CIP-68 reference NFT** for token metadata, minted once at registration and pinned to the admin credential.
+- **`SecurityInfo` regulatory metadata** block for eWpG/German and Swiss disclosure.
+
+### Operational evidence
+
+What the repository measures and pins, as distinct from what it enforces.
+
+- **Measured execution budget**: `aiken bench` scaling benchmarks for the transfer and seizure paths, published per-party costs, and conservative per-transaction party maxima at 25 % of the shared CIP-113 budget.
+- **Regression suite** (`validators/regression.ak`) pinning every fixed defect, with positive controls paired to each negative test.
+- **eUTXO-native batch mint/transfer** — a single transaction can create or move tokens across many holders, subject to the budget limits above.
 
 ## Reference
 
