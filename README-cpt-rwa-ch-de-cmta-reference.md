@@ -40,6 +40,7 @@
   - [Operational evidence](#operational-evidence)
 - [Annex](#annex)
   - [Terms](#terms)
+  - [What "validator" means here](#what-validator-means-here)
   - [Denied transfer: a sanctioned holder](#denied-transfer-a-sanctioned-holder)
   - [Denied transfer: a paused protocol](#denied-transfer-a-paused-protocol)
 - [Reference](#reference)
@@ -526,7 +527,7 @@ Cardano concepts a reader coming from Solidity needs in order to follow the tabl
 | **UTxO** | One unspent output: an address, a value (ADA plus any native assets), and optionally a datum. Spending it requires satisfying its address's credential. |
 | **Native asset** | A token the ledger tracks natively, identified by a **policy id** (28-byte hash of its minting script) plus an **asset name**. No token contract exists; the ledger enforces conservation. Quantities are integers, which is what makes "no fractions" (ID 4) hold by construction. |
 | **Minting policy** | The script that authorises creating or destroying units of its own policy id. A **negative mint** is a burn. |
-| **Validator / Plutus script** | A pure on-chain predicate that either accepts or rejects the transaction spending, minting, or withdrawing under it. It is *not* a node, a validator stake pool, or a network participant — the issuer deploys these scripts themselves, and nobody "approves" anything. |
+| **Validator / Plutus script** | A pure on-chain predicate that either accepts or rejects the transaction spending, minting, or withdrawing under it. It is *not* a node, a validator stake pool, or a network participant. See [What "validator" means here](#what-validator-means-here). |
 | **Plutus V3** | The script interpreter version these contracts compile to. **Aiken** is the source language; `aiken.toml` pins the compiler. |
 | **Datum** | Data attached to a UTxO. An **inline datum** stores it in the output directly. This is the only mutable state available: changing it means spending the UTxO and re-creating it with new contents. |
 | **Redeemer** | Data the spender supplies with the transaction, naming which branch of a validator to take and where to find things. It is an argument, never an authority — a redeemer claim must be checked against the transaction. |
@@ -541,6 +542,39 @@ Cardano concepts a reader coming from Solidity needs in order to follow the tabl
 | **Execution units** | The CPU and memory budget a transaction's scripts share (10 000 M CPU / 14 M memory). Memory binds first here, which is what caps parties per transfer. |
 | **CIP-68** | The metadata standard where a **reference NFT** holds a datum describing the token. This implementation's name and ticker (IDs 1, 2) live there. |
 | **CIP-113** | The programmable-token proposal this codebase targets. A **registry node** names the minting-logic and transfer-logic scripts for a policy; the **programmable-logic base** is the script address every such token must sit at, so that no transfer escapes its logic. The base layer is a deployment prerequisite and is **not** in this repository. |
+
+### What "validator" means here
+
+The word collides with Cardano's other meaning of it. Throughout this document a **validator is a Plutus script**, never a stake pool, a block producer or any other network participant. No one votes on a transaction, and the issuer deploys these scripts themselves.
+
+A validator is a pure predicate compiled to UPLC. It answers one yes/no question about the transaction being submitted, and it sees only that transaction: inputs, outputs, the mint field, withdrawals, signatories, the validity range, its own redeemer and datum. There is no storage between runs, no call to another contract, no clock, and no view of any UTxO the transaction does not itself reference. Plutus phase-2 validation is all-or-nothing — if any script in a transaction fails, the whole transaction fails — which is what makes withdraw-0 delegation sound.
+
+Its **hash is its identity**. For a spend the hash is the address; for a mint it is the policy id; for a withdrawal it is the stake credential. Change one byte of source and the hash changes, and with it the address or the token. `minting_logic_script.ak` records a real instance: routing one lookup through a shared helper moved its hash from `6defc595…` to `b6e4e07a…` with identical behaviour, and because the issuance policy id derives from that hash, the change would have orphaned every token already issued.
+
+Which question a validator answers depends on its **script purpose**. Aiken declares one handler per purpose, and this deployment uses four:
+
+| Purpose | The question it answers | Used here for |
+|---|---|---|
+| `spend` | May this UTxO at my address be consumed? | GlobalState; the denylist and power-users list nodes |
+| `mint` | May tokens under my policy id be created or destroyed? | The GlobalState NFT; the two list-node policies |
+| `withdraw` | May a reward withdrawal from my stake credential happen? | Transfer logic, seizure logic, the minting proxy and the minting authority — the withdraw-0 hook |
+| `publish` | May this certificate be posted? | Refusing every certificate except `RegisterCredential`, so no third party can de-register a credential and brick the protocol |
+
+The [Architecture Primer](#architecture-primer-read-first) lists the ten validators this deployment compiles. Their handlers divide as follows:
+
+| Module | Validators (handler) |
+|---|---|
+| `global_state` | `global_state_mint_validator` (mint), `global_state_spend_validator` (spend) |
+| `power_users` | `mint` (mint), `power_users_validator` (spend) |
+| `denylist` | `mint` (mint), `denylist_validator` (spend) |
+| `minting_logic_script` | `minting_logic_validator` (withdraw, publish) |
+| `minting_authority` | `minting_authority_validator` (withdraw, publish) |
+| `transfer_logic_script` | `transfer_logic_validator` (withdraw, publish) |
+| `third_party_transfer_logic_script` | `third_party_transfer_logic_validator` (withdraw, publish) |
+
+**Validators are immutable once deployed.** A Plutus script cannot be patched. Every upgrade path here — `RotateMintingScript`, `UpgradeRegistryNode` — is therefore indirection through mutable *state* that names a different script hash, never modification of a script. That is also why `LockUpgrades`, which freezes the indirection, is equivalent to freezing the rules.
+
+**Parameters are applied at compile time**, and each parameterisation yields a different hash. Hence the repository's ten-row parameter-application table and its strict compile order: the GlobalState policy id must exist before the proxy can be compiled, the proxy's hash yields the issuance policy id, and that id is then baked into the transfer, seizure and minting-authority validators as `expected_issuance_policy_id`.
 
 ### Denied transfer: a sanctioned holder
 
