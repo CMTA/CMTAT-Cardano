@@ -1,0 +1,76 @@
+@startuml
+title Moving tokens while the protocol is paused - what the pause does and does not stop
+
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam activityBackgroundColor #EEF5FF
+skinparam activityBorderColor #4A78B5
+skinparam activityDiamondBackgroundColor #FFFFFF
+skinparam activityDiamondBorderColor #4A78B5
+skinparam noteBackgroundColor #F7FAFF
+skinparam noteBorderColor #4A78B5
+
+start
+:A power user holding can_pause sets
+PauseTransfers { transfers_paused: True };<<#EEF5FF>>
+note right
+  That transaction may not move the security
+  token itself: no_security_token_spent closes
+  the pause-and-transfer bypass, where an actor
+  would pause and move value atomically under
+  the rules that held a moment before.
+end note
+
+:transfers_paused == True in the
+NFT-authenticated GlobalState datum;<<#EEF5FF>>
+
+if (Does the operation SPEND a programmable-base
+UTxO carrying the security token?) then (no - a fresh mint)
+  :Only the minting proxy and authority run.
+  verify_mint_or_burn reads deactivated,
+  never transfers_paused;<<#EEF5FF>>
+  :ALLOWED - by explicit decision
+  power user can_mint, cap still enforced;<<#EAF6F0>>
+  note right
+    Pinned by the test
+    mint_succeeds_while_transfers_are_paused_by_design.
+    Accepted consequence: a holder minted to
+    mid-pause cannot move the tokens until
+    the pause is lifted.
+  end note
+  stop
+else (yes)
+  :The CIP-113 base layer must dispatch
+  the spend to a transfer-logic script;<<#EEF5FF>>
+
+  if (Which path?) then ([TransferAct] ordinary transfer, or a standard burn)
+    :transfer_logic_validator runs
+    over the spent UTxO;<<#EEF5FF>>
+    :REJECTED
+    transfers_paused == False is a required
+    conjunct; no denylist or KYC proof
+    compensates for it;<<#FDEEEE>>
+    note right
+      This is also why a STANDARD BURN is
+      blocked while paused, even though the
+      burn path itself never reads the flag:
+      a burn is a spend, so it re-enters
+      this same paused transfer logic.
+    end note
+    stop
+  else ([ThirdPartyAct] seizure, by can_force_transfer)
+    :third_party_transfer_logic_validator runs.
+    No pause gate, and no source-side checks;<<#EEF5FF>>
+    :ALLOWED
+    destinations still vetted; at least one
+    spent input must carry the token;<<#EAF6F0>>
+    note right
+      Enforcement stays available during a pause
+      by design. Pair it with a negative mint and
+      can_burn to retire a position mid-pause.
+    end note
+    stop
+  endif
+endif
+
+@enduml

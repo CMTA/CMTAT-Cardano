@@ -1,0 +1,82 @@
+@startuml
+title What a burn must satisfy — and why can_burn alone is not enough
+
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam activityBackgroundColor #EEF5FF
+skinparam activityBorderColor #4A78B5
+skinparam activityDiamondBackgroundColor #FFFFFF
+skinparam activityDiamondBorderColor #4A78B5
+skinparam noteBackgroundColor #F7FAFF
+skinparam noteBorderColor #4A78B5
+
+start
+:Operator submits a transaction
+destroying existing supply;<<#EEF5FF>>
+:Burning spends a programmable-base UTxO;<<#EEF5FF>>
+note right
+  This is the whole point:
+  a burn is a SPEND, so the
+  base layer dispatches to a
+  transfer-logic path.
+end note
+
+if (Which base-layer path?) then ([TransferAct] the only one available)
+  :transfer_logic_script runs
+  over the burned UTxO;<<#EEF5FF>>
+  if (transfers_paused?) then (yes)
+    :REJECTED;<<#FDEEEE>>
+    stop
+  else (no)
+  endif
+  if (Sender on the denylist?) then (yes)
+    :REJECTED
+    no absence proof exists;<<#FDEEEE>>
+    stop
+  else (no)
+  endif
+  if (requires_sender_kyc and no valid proof?) then (yes)
+    :REJECTED;<<#FDEEEE>>
+    stop
+  else (no)
+  endif
+else ([ThirdPartyAct] seizure path)
+  :third_party_transfer_logic runs;<<#EEF5FF>>
+  :No source checks at all
+  no pause gate;<<#EEF5FF>>
+  if (Power user holds can_force_transfer?) then (no)
+    :REJECTED;<<#FDEEEE>>
+    stop
+  else (yes)
+  endif
+  if (At least one seized input carries the token?) then (no)
+    :REJECTED;<<#FDEEEE>>
+    stop
+  else (yes)
+  endif
+endif
+
+:minting_logic_script proxy delegates
+to the named minting authority;<<#EEF5FF>>
+if (deactivated?) then (yes)
+  :REJECTED;<<#FDEEEE>>
+  stop
+else (no)
+endif
+if (Any registry node spent?) then (yes)
+  :REJECTED
+  an upgrade may not ride along;<<#FDEEEE>>
+  stop
+else (no)
+endif
+if (Power user holds can_burn and signs?) then (no)
+  :REJECTED;<<#FDEEEE>>
+  stop
+else (yes)
+endif
+:GlobalState is SPENT
+MintSecurity credits the burned
+amount back to mintable_amount;<<#EEF5FF>>
+:Burn accepted;<<#EAF6F0>>
+stop
+@enduml

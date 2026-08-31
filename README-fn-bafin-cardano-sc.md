@@ -1,17 +1,10 @@
 # CMTAT Equivalency Assessment — `fn-bafin-cardano-sc` (upstream BaFin Cardano contracts)
 
-> **This is a filled copy of [`README.md`](./README.md) (assessment template `v0.2.0`).**
-> The *implementation being approved* is **[`easy1staking-com/fn-bafin-cardano-sc`](https://github.com/easy1staking-com/fn-bafin-cardano-sc)**,
-> the standalone Aiken contract set for BaFin-compliant security tokens on Cardano
-> (author: Matteo Coppola, Finest team). It follows the **Harmonic Labs CIP-113**
-> draft (Michele Nuzzi, Matteo Coppola, Phil DiSarro).
+> **This is a filled copy of [`CMTAT-equivalency-assessment/README.md`](./CMTAT-equivalency-assessment/README.md) (assessment template `v0.2.0`).** The *implementation being approved* is **[`FluidTokens/fn-bafin-cardano-sc`](https://github.com/FluidTokens/fn-bafin-cardano-sc)**, the standalone Aiken contract set for BaFin-compliant security tokens on Cardano (package namespace `ft/bafin`). It follows the **Harmonic Labs CIP-113** draft (Michele Nuzzi, Matteo Coppola, Phil DiSarro).
 >
-> This is the **upstream** codebase that the Cardano Foundation CIP-113
-> `security-token` substandard was ported from (see
-> [`README-cardano-cip113-security-token.md`](./README-cardano-cip113-security-token.md)).
-> The two are functionally close; the sections below flag the divergences, chiefly
-> around the **denylist access-control model** and the **absence of the platform
-> integration rubber-stamps**.
+> **Provenance note.** The CF substandard's own `aiken.toml` describes itself as "ported from easy1staking-com/fn-bafin-cardano-sc". That string is the only source for that name; it has not been verified to resolve as a GitHub path, and neither this codebase nor the CF platform's Aiken sources mention it anywhere else. The history containing the assessed commit is hosted under **FluidTokens**, which is what this repository's submodule tracks and what is cited above.
+>
+> This is the **upstream** codebase that the Cardano Foundation CIP-113 `security-token` substandard was ported from (see [`README-cip113-security-token.md`](./README-cip113-security-token.md)). The two are functionally close; the sections below flag the divergences, chiefly around the **denylist access-control model** and the **absence of the platform integration rubber-stamps**.
 
 ## Table of Contents
 
@@ -43,12 +36,14 @@
 - [Reference](#reference)
 
 ## Document Version
-`v0.2.0` (assessment template)
+`v0.1.0` (this assessment), filled from CMTA assessment template `v0.2.0`
 
 Note:
 
 - versions with the `rc` suffix are draft versions.
 - version before `1.0` are also draft versions
+
+Both numbers are below `1.0`, so by the rule above this assessment and the template it follows are each still a draft.
 
 ## How to Use This Document
 - Use the **CMTAT Function Equivalency Table** as the fillable assessment checklist.
@@ -62,6 +57,8 @@ Note:
 An implementation MAY satisfy the CMTAT standard while still failing to meet the criteria required for tokenized shares under Swiss law at the underlying-ledger level. In particular, compliance with CMTAT does not, by itself, demonstrate that decentralization-related legal criteria are satisfied.
 
 > **Additional warning specific to this implementation.** `fn-bafin-cardano-sc` is a research/reference codebase (`version = "0.0.0"`) with no published external security audit. It targets a **draft** of CIP-113 that is still under active development. This assessment is a *functional-mapping* exercise only; it does not constitute a security review or a legal opinion.
+
+Parts of this project, including this document, were written with the help of the AI coding assistant Claude Code (Anthropic).
 
 ## Architecture Primer (read first)
 
@@ -96,7 +93,7 @@ The practical consequence of the missing mint/burn rubber-stamp is that this cod
 
 ### Metadata
 - Implementation language: **Aiken** (on-chain, Plutus V3 / eUTXO). Off-chain tooling is out of scope of this repository (contracts only; a `plutus.json` blueprint is shipped).
-- Implementation version: package **`ft/bafin` v0.0.0**; Aiken compiler **v1.1.22**; `plutus = "v3"`; repo commit **`67ab7d9`** (`easy1staking-com/fn-bafin-cardano-sc`, 2026-06-23). Deps: `aiken-lang/stdlib v3.1.0`, `anastasia-labs/aiken-design-patterns v1.6.0`, `aiken-lang/merkle-patricia-forestry v2.1.0`.
+- Implementation version: package **`ft/bafin` v0.0.0**; Aiken compiler **v1.1.22**; `plutus = "v3"`; repo commit **`67ab7d9`** (`FluidTokens/fn-bafin-cardano-sc`, 2026-06-23). Deps: `aiken-lang/stdlib v3.1.0`, `anastasia-labs/aiken-design-patterns v1.6.0`, `aiken-lang/merkle-patricia-forestry v2.1.0`.
 
 ### Token Attributes
 #### Mandatory
@@ -159,7 +156,7 @@ For CMTAT reference implementations, `tokenId` SHOULD be included.
 
 | ID   | Requirement | CMTAT Solidity corresponding feature                         | Access Control (CMTAT Solidity)               | Notes                                                        | Present in implementation being approved (`y/n`) | Access Control (implementation being approved) | Implementation details |
 |---|---|---|---|---|---|---|---|
-| 15   | Freeze      | `freeze` or `setAddressFrozen(true)` *(inferred from extracted PDF text)* | Role-restricted (compliance/admin authorized) | Must block transfers to and from a given address. Single-function implementations are acceptable if they set a frozen status. | y | **Power user with `is_admin`** (must sign); flag granted by master admin | Implemented as a **denylist** (blocklist). `denylist.ak` `mint` redeemer `AddToDenylist { user_pkh, .. }` inserts a node keyed by the user PKH. Authority is **delegated**: any power user holding `is_admin` may sanction (signed by that user), so a compliance role is grantable without handing over the master admin key. Presence blocks **both sending and receiving** (covering-node absence proofs in both transfer validators) — stronger than CMTAT freeze. |
+| 15   | Freeze      | `freeze` or `setAddressFrozen(true)` *(inferred from extracted PDF text)* | Role-restricted (compliance/admin authorized) | Must block transfers to and from a given address. Single-function implementations are acceptable if they set a frozen status. | y | **Power user with `is_admin`** (must sign); flag granted by master admin | Implemented as a **denylist** (blocklist). `denylist.ak` `mint` redeemer `AddToDenylist { user_pkh, .. }` inserts a node keyed by the user PKH. Authority is **delegated**: any power user holding `is_admin` may sanction (signed by that user), so a compliance role is grantable without handing over the master admin key. Presence blocks **both sending and receiving** (covering-node absence proofs in both transfer validators), matching CMTAT freeze. |
 | 16   | Unfreeze    | `unfreeze` or `setAddressFrozen(false)` *(inferred from extracted PDF text)* | Role-restricted (compliance/admin authorized) | Single-function implementations are acceptable if they clear a frozen status. | y | **Power user with `is_admin`** (must sign) | `denylist.ak` `mint` redeemer `RemoveFromDenylist { user_pkh, .. }`, gated the same as adding. (Root-list `Deinit` is master-admin gated.) |
 
 #### Optional
@@ -338,7 +335,7 @@ Implementation being approved:
 
 | Component | Repository | Version / Commit |
 |---|---|---|
-| `fn-bafin-cardano-sc` | https://github.com/easy1staking-com/fn-bafin-cardano-sc | commit `67ab7d9` (2026-06-23); pkg `ft/bafin` v0.0.0; Aiken `v1.1.22`; Plutus V3 |
+| `fn-bafin-cardano-sc` | https://github.com/FluidTokens/fn-bafin-cardano-sc | commit `67ab7d9` (2026-06-23); pkg `ft/bafin` v0.0.0; Aiken `v1.1.22`; Plutus V3. CF's `aiken.toml` names the origin as `easy1staking-com/fn-bafin-cardano-sc` (unverified path). |
 | CIP-113 draft followed | https://github.com/HarmonicLabs/CIPs/tree/master/CIP-meta-assets%20(ERC20-like%20assets) | Harmonic Labs (Nuzzi, Coppola, DiSarro) |
 | Derived CF substandard (for comparison) | https://github.com/cardano-foundation/cip113-programmable-tokens-platform | `src/substandards/security-token/` |
 

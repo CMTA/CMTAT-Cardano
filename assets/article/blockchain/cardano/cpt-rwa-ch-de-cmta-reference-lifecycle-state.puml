@@ -1,0 +1,49 @@
+@startuml
+title Token lifecycle — pause, the one-way upgrade lock, and the terminal state
+
+skinparam shadowing false
+skinparam stateBackgroundColor #EEF5FF
+skinparam stateBorderColor #4A78B5
+skinparam noteBackgroundColor #F7FAFF
+skinparam noteBorderColor #4A78B5
+
+[*] --> Live : genesis\nborn unpaused, unlocked, active
+
+state Live {
+  state "Transfers open" as open
+  state "Transfers paused" as paused
+  open --> paused : PauseTransfers(True)\ncan_pause power user
+  paused --> open : PauseTransfers(False)\ncan_pause power user
+}
+
+state "Upgrades open" as uopen
+state "Upgrades locked" as ulocked
+
+[*] --> uopen : genesis
+uopen --> ulocked : LockUpgrades\nadmin, refuses to re-lock
+ulocked --> ulocked : RotateMintingScript refused\nUpgradeRegistryNode refused
+
+Live --> Deactivated : DeactivateContract\nadmin signs, requires paused first
+
+state Deactivated #FDEEEE {
+  state "GlobalState unspendable\nevery branch rejected\nbefore dispatch" as tomb
+}
+
+Deactivated --> [*] : no exit\nno branch clears the flag
+
+note right of uopen
+  While open: the minting authority
+  may be swapped, and the transfer and
+  seizure logic re-pointed through the
+  registry node. Both are admin-gated.
+end note
+
+note bottom of Deactivated
+  Mint dies (MintSecurity can never run),
+  the pause can never be lifted, and the
+  transfer, seizure, denylist and
+  power-user validators all refuse.
+  Supply need not be zero: cancelled
+  and immobilised are both supported.
+end note
+@enduml

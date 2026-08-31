@@ -1,0 +1,71 @@
+@startuml
+title Cardano CMTA reference profiles — validator architecture and the base-layer boundary
+
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+skinparam linetype ortho
+skinparam nodesep 25
+skinparam ranksep 45
+skinparam cardBackgroundColor #EEF5FF
+skinparam cardBorderColor #4A78B5
+skinparam packageBackgroundColor #FFFFFF
+skinparam packageBorderColor #4A78B5
+skinparam actorBackgroundColor #EEF5FF
+skinparam actorBorderColor #4A78B5
+skinparam noteBackgroundColor #F7FAFF
+skinparam noteBorderColor #4A78B5
+
+package "CIP-113 base layer (not in this repo)" as BASE {
+  card "registry node\nkey derived from the\nminting-logic hash" as reg
+  card "programmable-logic base\ncustody + dispatch" as plb
+}
+
+package "Withdraw-0 validators (this repo)" as V {
+  card "minting_logic_script\n**PERMANENT** proxy\ndecides almost nothing" as proxy
+  card "minting_authority\n**SWAPPABLE**\nevery mint/burn rule" as auth
+  card "transfer_logic_script\nper-transfer gate" as tl
+  card "third_party_transfer_logic\nseizure, no source checks" as tp
+}
+
+card "**GlobalState UTxO** (single NFT)\n--\ntransfers_paused · deactivated\nmintable_amount (supply cap)\nadmin_credential_hash\nminting_script_credential_hash\nupgrades_locked\ntrusted_entity_vkeys · member_root_hash\nrequires_sender_kyc · requires_receiver_kyc\nsecurity_info (opaque, unparsed)" as GS
+
+card "global_state_spend\n13 actions\nterminal guard" as gss
+
+package "On-chain sets" as LISTS {
+  card "power_users\nrole-flag nodes" as pull
+  card "denylist\npresence = sanctioned" as dl
+}
+
+actor "Holder" as holder
+actor "Admin" as admin
+actor "Power user" as pu
+actor "Trusted entity" as te
+
+holder --> plb : spends a token UTxO
+reg --> proxy : dispatches
+plb --> tl : every token spend
+plb --> tp : seizure path
+
+proxy --> auth : requires its withdraw-0
+proxy --> GS : reads the named authority
+
+tl --> GS : pause + deactivation + KYC flags
+tl --> dl : absence proof, both sides
+tp --> dl : destination absence
+tp --> pull : can_force_transfer
+auth --> GS : SPENDS it, cap enforced
+auth --> pull : can_mint / can_burn
+auth --> dl : destination absence
+
+admin --> gss : governs every field
+gss --> GS
+pu --> pull : signs
+te ..> GS : keys curated here,\nsigns attestations off-chain
+
+note right of BASE
+  Custody on mint, transfer and seizure, registry
+  integrity, and "no supply change on upgrade" are
+  delegated here — verified at base commit 018415d.
+end note
+@enduml
