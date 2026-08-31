@@ -53,6 +53,7 @@ The code assessed, the commit it is pinned to and the toolchain are recorded und
   - [What "validator" means here](#what-validator-means-here)
   - [Denied transfer: a sanctioned holder](#denied-transfer-a-sanctioned-holder)
   - [Denied transfer: a paused protocol](#denied-transfer-a-paused-protocol)
+- [Frequently Asked Questions](#frequently-asked-questions)
 - [Reference](#reference)
 
 ## About CMTA and CMTAT
@@ -554,6 +555,7 @@ Cardano concepts a reader coming from Solidity needs in order to follow the tabl
 | **Withdraw-0** | A zero-ADA reward withdrawal included purely to force a script to run once per transaction. This is how CIP-113 invokes transfer logic: it is the eUTXO equivalent of a CMTAT transfer hook or RuleEngine call. |
 | **State thread / NFT-authenticated UTxO** | A UTxO made unique and unforgeable by holding a one-of-a-kind token. `GlobalStateDatum` is authenticated this way — finding the NFT *is* the proof the datum is genuine. |
 | **On-chain linked list** | eUTXO has no mapping type, so a set is built as ordered nodes, each a UTxO keyed by a hash and linking to the next. Membership is presence of a node; **absence** is proved by referencing the *covering* node whose key and link strictly bracket the target. Used for the denylist and the power-users list. |
+| **Node** | One element of such a list: a single UTxO sitting at the list's own spend address, holding exactly ADA plus one NFT of the list's policy, whose asset name is the 4-byte prefix `"Node"` followed by the 28-byte key. The **key is fixed by the NFT** and cannot be rewritten; the **link and payload live in the mutable datum**, which is why every reader also pins the node's address. Not a `cardano-node`, and distinct from a CIP-113 **registry node**, which is an element of the base layer's own list. |
 | **MPF (Merkle Patricia Forestry)** | A hash tree whose root fits in one datum field, letting membership be proved by an inclusion proof instead of an on-chain node per member. The alternative KYC mechanism to signed attestations. |
 | **Ed25519** | The signature scheme used both by the ledger for transaction signatures and, here, by trusted entities signing off-chain KYC attestations verified inside the validator. |
 | **Validity range** | The slot window in which a transaction may be accepted. A TTL is enforced by requiring the range's **upper bound** to be finite and no later than the attestation's expiry — an on-chain script cannot read "now". |
@@ -611,6 +613,44 @@ The pause is a single flag in the authenticated GlobalState datum, and `transfer
 That single rule explains all three outcomes in the [Implementation Details](#implementation-details) table. A **mint** spends no such UTxO, so the transfer logic never runs and minting stays available — a deliberate divergence, pinned by a test. A **standard burn** does spend one, so it re-enters the paused transfer logic and is blocked in practice, even though nothing on the burn path reads the pause flag. **Seizure** is dispatched to `third_party_transfer_logic_validator`, which has no pause gate, so enforcement stays available; pairing it with a negative mint is the only way to retire a position mid-pause, and needs `can_force_transfer` **and** `can_burn`.
 
 Lifting the pause is `PauseTransfers { transfers_paused: False }` by a `can_pause` power user — unless the protocol has been deactivated, in which case the terminal guard rejects every GlobalState spend and the pause becomes permanent (ID 14).
+
+## Frequently Asked Questions
+
+**Q: What is a "validator" here?**
+
+A Plutus script — never a stake pool, a block producer, or any party that approves a transaction. It is a pure predicate over the single transaction being submitted, and its hash is its identity: for a spend the hash is the address, for a mint the policy id, for a withdrawal the stake credential. [What "validator" means here](#what-validator-means-here) covers the script purposes and lists the ten this deployment compiles.
+
+**Q: What is a "node" here?**
+
+Three different things wear the word in this document, and only the first two appear in this codebase.
+
+- **A list node.** eUTXO has no mapping type, so a set is built as a sorted linked list whose elements are UTxOs. Each such UTxO is a node: it sits at the list's spend address, carries exactly ADA plus one NFT of the list's policy, and its asset name is `"Node"` followed by the 28-byte key. The **key is minted into the asset name** and is immutable; the **link to the next key, and any payload, sit in the inline datum** and can be rewritten by whoever holds the UTxO. That split is why every reader also checks the node still lives at the list's address.
+- **A CIP-113 registry node.** Structurally the same idea, but an element of the base layer's registry rather than of either list here. It names the minting-logic and transfer-logic scripts for a policy. This is the sense in play in `UpgradeRegistryNode` and in "no registry node spent during a supply change".
+- **A `cardano-node`.** The network client. It never appears in this document.
+
+The two lists in this deployment differ only in payload. A **denylist** node's datum is inspected by nothing — presence in the list *is* the sanction. A **power-users** node's datum carries the five role flags, so there the payload is the authority, which is what makes the address pin load-bearing: a node NFT carried into a private wallet would otherwise keep granting whatever flags its holder wrote.
+
+**Q: Why must every transfer supply a "covering-node reference input"?**
+
+Because a validator cannot look anything up. It sees only the transaction in front of it, so it cannot ask whether a party is on the denylist — the transaction builder has to supply the evidence and the validator only checks it.
+
+Since the list is sorted, absence is witnessed by a single node: the one whose key sits immediately below the party and whose link points immediately above them. Nothing can hide in that gap. `covers_key` requires `covering_key < target < covering_link`, with **both comparisons strict**, treating the root as −∞ and a `None` link as +∞.
+
+*Reference* input means read without spending, so a transfer never consumes the denylist and many transfers can cite the same node in the same block.
+
+**Q: What happens when the party is actually sanctioned?**
+
+No covering node exists, so the transaction cannot be built. If the party's key is `0x77…`, the node below it links to `0x77…` and fails `target < link`; the party's own node fails `key < target`; any node further down links to its own successor, at or below the target, and fails the upper bound too. Both edge cases are pinned by tests (`covers_target_equal_key_sad`, `covers_target_equal_link_sad`).
+
+Nothing in the code detects the sanction and rejects it. The proof the transaction needs simply cannot be constructed. Forging one fails on three counts: the node must carry the list NFT with a well-formed datum, it must still sit at the denylist spend address, and a missing or wrong reference index traps rather than failing quietly. The [Annex](#denied-transfer-a-sanctioned-holder) traces the full path.
+
+**Q: Why is a zero-ADA withdrawal part of every transfer?**
+
+A spending validator runs once per UTxO spent, so a transfer consuming ten of a holder's UTxOs would repeat the whole compliance check ten times — and each run would see only its own input, which is useless when the rule is about the *set* of parties in the transaction.
+
+A withdrawal of zero balances trivially and moves no value, but it makes the ledger invoke the named script **exactly once, with the whole transaction in view**. Under Plutus phase-2 validation a script named as a withdrawal key must execute and succeed or the transaction fails, so the mere presence of that key proves the script ran and approved this transaction. That is what lets the minting proxy delegate every real rule to a swappable authority, and it is why the proxy uses `must_run_script_withdrawal` rather than `must_be_signed_by_credential` — a signature would prove consent, not that any logic executed.
+
+The cost is that the stake credential must stay registered, which is why all four withdraw-0 validators accept `RegisterCredential` and refuse every other certificate.
 
 ## Reference
 
