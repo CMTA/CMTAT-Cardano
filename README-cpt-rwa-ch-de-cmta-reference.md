@@ -49,6 +49,7 @@ The code assessed, the commit it is pinned to and the toolchain are recorded und
   - [State integrity](#state-integrity)
   - [Token metadata](#token-metadata)
   - [Operational evidence](#operational-evidence)
+- [Conclusion](#conclusion)
 - [Annex](#annex)
   - [Terms](#terms)
   - [What "validator" means here](#what-validator-means-here)
@@ -558,6 +559,20 @@ What the repository measures and pins, as distinct from what it enforces.
 - **Measured execution budget**: `aiken bench` scaling benchmarks for the transfer and seizure paths, published per-party costs, and conservative per-transaction party maxima at 25 % of the shared CIP-113 budget.
 - **Regression suite** (`validators/regression.ak`) pinning every fixed defect, with positive controls paired to each negative test.
 - **eUTXO-native batch mint/transfer** — a single transaction can create or move tokens across many holders, subject to the budget limits above.
+
+## Conclusion
+
+CMTAT was written for a ledger with accounts, contract storage and a `msg.sender`. Cardano has none of those, so the question this assessment answers is not whether the Solidity code was ported, but whether the behaviours the standard requires can be produced at all under a different execution model, and at what cost.
+
+**The mandatory surface is complete.** All 17 mandatory items are present, and no mandatory answer is `n`. The three `partial` answers are the CMTAT accessors `terms`, `totalSupply` and `balanceOf`, none of which has an on-chain counterpart where balances are sets of UTxOs rather than integers in a mapping. Two of the three describe information that is public and exact, and that any indexer returns; the third, the legal-documentation reference, adds an obligation on the issuer and registrar rather than only moving where the data is read from.
+
+**The absences are deliberate and declared.** Of the 30 absent optional items, 26 are the snapshot, distribution, credit-event and debt modules that the repository names among the optional CMTA modules it does not implement. The rest are the allowance model and partial freeze, neither of which has an eUTXO form, and the conditional-transfer pair, where approval exists as an off-chain attestation rather than an on-chain queue. An issuer needing dividends, snapshots or delegated settlement should treat those as work not yet done, not as work the ledger prevents.
+
+**Some CMTAT properties hold for free, and others cost more than on EVM.** Cardano native assets are integer-only, so "no fractions" holds by construction rather than by setting `decimals` to zero. A settlement transaction consumes the seller's UTxO, so double-settlement is prevented by the ledger without a partial-freeze flag. Against that, the absence of a mapping type turns each of the two sanction and role sets into a linked list with its own mint and spend validators, mutable configuration needs an NFT-authenticated state UTxO, and an upgrade path needs a proxy and a swappable authority, because a deployed script cannot be modified. Ten validators do what a single Solidity contract does, and the compliance checks a transfer performs are paid per party against a shared execution budget, which caps an ordinary transfer near 13 parties per side.
+
+**Composition with the base layer produces behaviours that neither side states.** A burn spends a programmable-base UTxO, so the CIP-113 base layer runs the paused transfer logic over it: burning is blocked during a pause and refused entirely for a sanctioned holder, neither of which any line in this repository states. Retiring a sanctioned position therefore needs `can_burn` and `can_force_transfer` together. Seizure from such a holder is all-or-nothing per UTxO, because a partial seizure's residual returns to an address that can no longer produce a denylist-absence proof. Both follow from composing this deployment with the CIP-113 base layer, which is deployed separately and is not part of the assessed repository. An issuer reading the contracts alone would not find them.
+
+**What this assessment does not establish.** The code is unaudited: a third-party audit is planned and not complete, and the two penetration tests predate the assessed commit. Two deployment properties that no on-chain code can check — that the GlobalState NFT lands at the right address at genesis, and that every role credential names something that genuinely decides — materially affect several `y` answers above, and a mistake in either fails open, and silently. This document is a functional mapping of one revision against one template. It is not a security review, and it is not a legal opinion on whether a token deployed this way satisfies any jurisdiction's requirements for ledger-based securities.
 
 ## Annex
 
