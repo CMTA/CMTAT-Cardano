@@ -50,6 +50,11 @@ The code assessed, the commit it is pinned to and the toolchain are recorded und
   - [Token metadata](#token-metadata)
   - [Operational evidence](#operational-evidence)
 - [Conclusion](#conclusion)
+  - [No mandatory item is absent](#no-mandatory-item-is-absent)
+  - [The absences are deliberate and declared](#the-absences-are-deliberate-and-declared)
+  - [What the ledger supplies, and what had to be built](#what-the-ledger-supplies-and-what-had-to-be-built)
+  - [Two behaviours are enforced by composition, not by any check here](#two-behaviours-are-enforced-by-composition-not-by-any-check-here)
+  - [What this assessment does not establish](#what-this-assessment-does-not-establish)
 - [Annex](#annex)
   - [Terms](#terms)
   - [What "validator" means here](#what-validator-means-here)
@@ -562,17 +567,59 @@ What the repository measures and pins, as distinct from what it enforces.
 
 ## Conclusion
 
-The CMTAT framework is blockchain-agnostic; its Solidity reference implementation is the part that assumes accounts, contract storage and a `msg.sender`. Cardano supplies none of them. Value sits in unspent outputs rather than in balances, a deployed script cannot be modified, and a validator sees only the transaction in front of it, with no access to the ledger beyond what that transaction names. This assessment records which of the framework's required behaviours are produced under those constraints, and what it takes to produce them.
+The CMTAT framework is blockchain-agnostic; its Solidity reference implementation is the part that assumes accounts, contract storage and a `msg.sender`. Cardano supplies none of them:
 
-**No mandatory item is absent.** Of the 17, fourteen are answered `y` and three `partial`. The three `partial` answers are the CMTAT accessors `terms`, `totalSupply` and `balanceOf`, none of which has an on-chain counterpart where balances are sets of UTxOs rather than integers in a mapping. Two of the three describe information that is public and exact, and that any indexer returns; the third, the legal-documentation reference, adds an obligation on the issuer and registrar rather than only moving where the data is read from.
+- Value sits in unspent outputs rather than in balances.
+- A deployed script cannot be modified.
+- A validator sees only the transaction in front of it, with no access to the ledger beyond what that transaction names.
 
-**The absences are deliberate and declared.** Of the 30 absent optional items, 26 are the snapshot, distribution, credit-event and debt modules that the repository names among the optional CMTA modules it does not implement. The rest are the allowance model and partial freeze, neither of which has an eUTXO form, and the conditional-transfer pair, where approval exists as an off-chain attestation rather than an on-chain queue. An issuer needing dividends, snapshots or delegated settlement should treat those as work not yet done, not as work the ledger prevents.
+This assessment records which of the framework's required behaviours are produced under those constraints, and what it takes to produce them.
 
-**Some CMTAT properties come from the ledger itself; others have to be built on top of it.** Cardano native assets are integer-only, so "no fractions" holds by construction rather than by setting `decimals` to zero. A settlement transaction consumes the seller's UTxO, so double-settlement is prevented by the ledger without a partial-freeze flag. Against that, the absence of a mapping type turns each of the two sanction and role sets into a linked list with its own mint and spend validators, mutable configuration needs an NFT-authenticated state UTxO, and an upgrade path needs a proxy and a swappable authority, because a deployed script cannot be modified. Ten validators do what a single Solidity contract does, and the compliance checks a transfer performs are paid per party against a shared execution budget, which caps an ordinary transfer near 13 parties per side.
+### No mandatory item is absent
 
-**Two behaviours are enforced by composition rather than by any check in this codebase.** A burn spends a programmable-base UTxO, so the CIP-113 base layer runs the paused transfer logic over it: burning is blocked during a pause and refused entirely for a sanctioned holder, and retiring such a position therefore needs `can_burn` and `can_force_transfer` together. Seizure from a sanctioned holder is all-or-nothing per UTxO, because a partial seizure's residual returns to an address that can no longer produce a denylist-absence proof. No validator here implements either rule; both follow from the base layer's dispatch, and the repository records them under *Operational constraints imposed by the base layer* rather than as features it provides. Neither is visible from the validators alone, and the burn constraint corrects the pause exemption as the repository first documented it.
+Of the 17 mandatory items, fourteen are answered `y` and three `partial`. All three are CMTAT accessors with no on-chain counterpart where a balance is a set of UTxOs rather than an integer in a mapping.
 
-**What this assessment does not establish.** The code is unaudited: a third-party audit is planned and not complete, and the two penetration tests predate the assessed commit. Two deployment properties that no on-chain code can check — that the GlobalState NFT lands at the right address at genesis, and that every role credential names a key or a script capable of refusing — materially affect several `y` answers above, and a mistake in either fails open with no signal. This document is a functional mapping of one revision against one template. It is not a security review, and it is not a legal opinion on whether a token deployed this way satisfies any jurisdiction's requirements for ledger-based securities.
+- `totalSupply` and `balanceOf` describe information that is public and exact, and that any indexer returns.
+- `terms`, the legal-documentation reference, places an obligation on the issuer and registrar rather than only moving where the data is read from. The note below sets out what would close it.
+
+### The absences are deliberate and declared
+
+Of the 30 absent optional items:
+
+- **26 are four modules the repository declines to implement** — snapshots, distributions, credit events and debt terms — which it names explicitly among the optional CMTA modules it leaves out.
+- **Two have no eUTXO form**: the allowance model and partial freeze.
+- **Two are answered `n (implicit)`**: the conditional-transfer pair, where approval exists as an off-chain attestation rather than an on-chain queue.
+
+An issuer needing dividends, snapshots or delegated settlement should treat those as work not yet done, not as work the ledger prevents.
+
+### What the ledger supplies, and what had to be built
+
+Two CMTAT properties come from the ledger itself:
+
+- Native assets are integer-only, so "no fractions" holds by construction rather than by setting `decimals` to zero.
+- A settlement transaction consumes the seller's UTxO, so double-settlement is prevented without a partial-freeze flag.
+
+The rest is machinery this codebase had to supply:
+
+- The absence of a mapping type turns each of the sanction and role sets into a linked list, with its own mint and spend validators.
+- Mutable configuration needs an NFT-authenticated state UTxO.
+- An upgrade path needs a proxy and a swappable authority, because a deployed script cannot be modified.
+
+Ten validators do what a single Solidity contract does, and the compliance checks a transfer performs are paid per party against a shared execution budget, which caps an ordinary transfer near 13 parties per side.
+
+### Two behaviours are enforced by composition, not by any check here
+
+- **Burning is gated by the pause and by the denylist.** A burn spends a programmable-base UTxO, so the CIP-113 base layer runs the paused transfer logic over it. Burning is therefore blocked during a pause and refused for a sanctioned holder, and retiring such a position needs `can_burn` and `can_force_transfer` together.
+- **Seizure from a sanctioned holder is all-or-nothing per UTxO**, because a partial seizure's residual returns to an address that can no longer produce a denylist-absence proof.
+
+No validator here implements either rule; both follow from the base layer's dispatch, and the repository records them under *Operational constraints imposed by the base layer* rather than as features it provides. Neither is visible from the validators alone, and the burn constraint corrects the pause exemption as the repository first documented it.
+
+### What this assessment does not establish
+
+- **The code is unaudited.** A third-party audit is planned and not complete, and the two penetration tests predate the assessed commit.
+- **Two deployment properties cannot be checked on-chain:** that the GlobalState NFT lands at `global_state_spend_validator`'s address at genesis, and that every role credential names a key or a script capable of refusing. Both materially affect several `y` answers above, and a mistake in either fails open with no signal.
+
+This document is a functional mapping of one revision against one template. It is not a security review, and it is not a legal opinion on whether a token deployed this way satisfies any jurisdiction's requirements for ledger-based securities.
 
 ##### Note
 
