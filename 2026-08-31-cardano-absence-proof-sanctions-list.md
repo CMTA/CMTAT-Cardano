@@ -12,7 +12,7 @@ This article works through the mechanism as `cpt-rwa-ch-de-cmta-reference` imple
 
 A Plutus script is a pure predicate over a single `Transaction`. It sees the inputs, the outputs, the mint field, the withdrawals, the signatories, the validity range, its own redeemer and datum. There is no opcode for reading the chain, no global state, and no way to enumerate the UTxO set.
 
-So any on-chain fact a script needs must be brought to it by the transaction itself, as an input or a **reference input**, which is a UTxO the transaction reads without spending. Citation is the only channel. What looks like an unusual demand placed on the caller is really the only mechanism the ledger offers: if you want a script to know something about chain state, you must name the UTxO carrying it.
+So any on-chain fact a script needs must be brought to it by the transaction itself, as an input or a **reference input**, which is a UTxO the transaction reads without spending. Citation is the only channel. What looks like an unusual demand placed on the caller is the only mechanism the ledger offers: if you want a script to know something about chain state, you must name the UTxO carrying it.
 
 The consequence is that presence and absence are asymmetric. Proving a party *is* on a list is easy: cite their node. Proving they are *not* on it appears to require reading the whole list, which is exactly what a script cannot do.
 
@@ -134,7 +134,7 @@ The pattern generalises beyond sanctions lists. Any eUTXO application that needs
 | The list is sorted ascending by key. | `insert_ascending` on every add and remove. | A node could be inserted out of order, so a bracket would no longer witness absence. |
 | A node's link names its immediate successor, skipping nothing. | Insertion spends the anchor and rewrites its link; exactly one input may bear the list policy. | A link could span a sanctioned member, and a valid bracket would prove nothing. |
 | A node's key cannot be altered after creation. | The key is minted into the NFT asset name. | A holder could re-key a node to bracket any target. |
-| An authenticated node is genuinely in the list. | The address pin requiring the node to sit at the denylist spend address. | A node NFT held in a wallet, keyed low with a `None` link, would certify absence for every address. |
+| A node that authenticates is still in the list. | The address pin requiring the node to sit at the denylist spend address. | A node NFT held in a wallet, keyed low with a `None` link, would certify absence for every address. |
 | Every key is exactly 28 bytes. | A length check on insertion. | A malformed key could never match a real node, leaving the sanction silently unenforceable. |
 | Absence is proved for every party, or the transaction fails. | Lockstep walking of the party and action lists, which traps on a short action list. | A short redeemer would silently skip the unmatched parties. |
 

@@ -74,7 +74,7 @@ Destroying existing supply means spending a programmable-base UTxO, and the base
 
 Three consequences follow, and they run in different directions.
 
-- **The pause exemption is half what it was documented to be.** Minting really does stay available during a pause, because a fresh mint spends no programmable-base UTxO and the transfer logic never runs. Burning does not, because it does.
+- **The pause exemption is half what it was documented to be.** Minting does stay available during a pause, because a fresh mint spends no programmable-base UTxO and the transfer logic never runs. Burning does not, because it does.
 - **`can_burn` is not sufficient authority.** A burn during a pause, or from a sanctioned or uncooperative holder, has to be routed through the seizure path, which has no pause gate and no source-side checks and which requires an operator holding `can_force_transfer`. Grant the two roles together to whoever is expected to perform court-ordered or regulator-ordered burns.
 - **A CMTAT divergence closed itself.** Both predecessor codebases permitted a standard burn of a frozen holder's tokens, which CMTAT forbids. Here a sanctioned holder cannot produce the denylist-absence proof the burn's sender-side logic demands, so the standard path fails and the guideline is satisfied without anyone writing a check for it.
 
