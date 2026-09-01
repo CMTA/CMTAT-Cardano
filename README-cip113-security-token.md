@@ -8,6 +8,7 @@
 - [How to Use This Document](#how-to-use-this-document)
 - [General Note](#general-note)
 - [Warning](#warning)
+- [Summary](#summary)
 - [Architecture Primer (read first)](#architecture-primer-read-first)
 - [CMTAT Function Equivalency Table](#cmtat-function-equivalency-table)
   - [Metadata](#metadata)
@@ -54,6 +55,20 @@ An implementation MAY satisfy the CMTAT standard while still failing to meet the
 > **Additional warning specific to this implementation.** The CIP-113 platform is flagged by its own authors as **Research & Development / not production-ready / pending professional security audit**. This assessment is a *functional-mapping* exercise only; it does not constitute a security review or a legal opinion.
 
 Parts of this project, including this document, were written with the help of the AI coding assistant Claude Code (Anthropic).
+
+## Summary
+
+| Answer | Mandatory (17) | Optional (37) |
+|---|---:|---:|
+| Present (`y`) | 11 | 2 |
+| Partial | 5 | 5 |
+| Absent (`n`) | 1 | 30 |
+
+**One mandatory item is not met:** ID 14, deactivate contract, answered `n (partial)` — an indefinite pause and a list teardown exist, but no irreversible decommissioning switch. The five mandatory partials are name, ticker, legal-documentation reference, total supply and balance, each a consequence of eUTXO having no accounts rather than a missing feature.
+
+Of the 30 absent optional items, 26 belong to four modules the codebase does not implement: snapshots, distributions, credit events and debt terms. The remaining four are the allowance model (ID 11) and partial freeze (ID 18), neither of which has an eUTXO equivalent, and the conditional-transfer pair (IDs 19 and 20), where approval is an off-chain attestation rather than an on-chain queue. Forced transfer and a KYC allowlist are present.
+
+Read the [Warning](#warning) before relying on any answer: this code is unaudited, and several behaviours depend on the CIP-113 base layer rather than on this codebase alone.
 
 ## Architecture Primer (read first)
 

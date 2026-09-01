@@ -22,6 +22,7 @@ The code assessed, the commit it is pinned to and the toolchain are recorded und
 - [How to Use This Document](#how-to-use-this-document)
 - [General Note](#general-note)
 - [Warning](#warning)
+- [Summary](#summary)
 - [Relationship to the other assessments in this repository](#relationship-to-the-other-assessments-in-this-repository)
 - [Architecture Primer (read first)](#architecture-primer-read-first)
 - [CMTAT Function Equivalency Table](#cmtat-function-equivalency-table)
@@ -121,6 +122,30 @@ An implementation MAY satisfy the CMTAT standard while still failing to meet the
 > 4. **Two deployment properties no on-chain code can check** (recorded by the implementation itself) materially affect several `y` answers below: the GlobalState NFT must actually land at `global_state_spend_validator`'s address at genesis, and every role credential must name something that genuinely decides (the `must_be_signed_by_credential` helper accepts a script withdrawal, so a permissive script hash in any role field fails **open**, silently). Both must be verified off-chain, after genesis and after every rotation.
 
 Parts of this project, including this document, were written with the help of the AI coding assistant Claude Code (Anthropic).
+
+## Summary
+
+| Answer | Mandatory (17) | Optional (37) |
+|---|---:|---:|
+| Present (`y`) | 14 | 3 |
+| Partial | 3 | 4 |
+| Absent (`n`) | 0 | 30 |
+
+**Every mandatory item is present.** Two of the fourteen are carried by CIP-68 metadata rather than by an accessor function, and the three partials — the legal-documentation reference, total supply and balance — follow from eUTXO having no accounts and no contract storage, not from a missing feature.
+
+Of the 30 absent optional items, 26 belong to four modules the repository names among the optional CMTA modules it deliberately does not implement: snapshots, distributions, credit events and debt terms. The remaining four are the allowance model (ID 11) and partial freeze (ID 18), neither of which has an eUTXO equivalent, and the conditional-transfer pair (IDs 19 and 20), where approval is an off-chain attestation rather than an on-chain queue. Forced transfer, an integrated KYC allowlist, an on-chain supply cap and an irreversible deactivation switch are all present.
+
+Read the [Warning](#warning) before relying on any answer: two deployment properties that no on-chain code can check materially affect several `y` answers, and the code is unaudited.
+
+##### Note
+
+> **The three mandatory partials, and what a reader has to do instead.** None of them is a gap in the compliance logic; each is a CMTAT accessor with no on-chain counterpart on a ledger that has neither accounts nor contract storage.
+>
+> - **ID 3, reference to legally required documentation.** There is no CMTAT `terms` structure and **no on-chain document-hash field**. `GlobalStateDatum.security_info` is opaque `Data`, capped at 4 096 CBOR bytes and parsed by no validator, so a document URI and its hash would have to be encoded inside that blob or in the CIP-68 datum. `lib/types/security/bafin.ak` gives the intended shape, but only for the German profile; the Swiss profile ships no schema type. This is the partial with real work attached: keeping the field correct and consistent with the register is an off-chain duty of the issuer and registrar, which the repository states explicitly.
+> - **ID 6, know total supply.** There is no `totalSupply()`. `mintable_amount` is a **remaining-mintable cap**, decremented on mint and credited back on burn, so it answers "how much may still be issued", not "how much exists". `SecurityInfo.volume_of_issuance` records the intended total as metadata. Circulating supply is the sum of the on-chain UTxOs and comes from any chain indexer.
+> - **ID 7, know balance.** There is no `balanceOf()`. A holder's position is the sum of the security-token quantity across the programmable-base UTxOs whose inline stake credential is that holder, and it is read off the ledger rather than from the contract. The stake credential is the owner identity under CIP-113, which is why enterprise addresses are rejected by both transfer paths.
+>
+> IDs 6 and 7 are answered `partial` rather than `y` because the CMTAT accessor is absent, not because the information is unavailable: both quantities are public and exact, and any indexer returns them. IDs 1 and 2, name and ticker, are marked `y (metadata)` for the related reason that they live in the CIP-68 reference NFT instead of in an accessor.
 
 ## Relationship to the other assessments in this repository
 
