@@ -63,7 +63,13 @@ diff CLAUDE.md AGENTS.md
 
 ## Unreleased
 
-_Nothing yet._
+### Added
+
+- Article on [absence proofs](./2026-08-31-cardano-absence-proof-sanctions-list.md): how a party proves it is not on the sanctions list, why a caller-supplied reference input is sound, and what a transaction builder must do to satisfy the check.
+
+### Diagrams
+
+- Four PlantUML sources for the absence-proof article, registered in [`tree.txt`](./tree.txt): a mindmap, the sorted linked list, the off-chain build, and the trust chain across the sanction and transfer paths.
 
 ## v0.1.0 - 2026-08-31
 

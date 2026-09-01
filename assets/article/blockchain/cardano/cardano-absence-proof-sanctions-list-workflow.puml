@@ -1,0 +1,63 @@
+@startuml
+title Building the proof off-chain, before the transaction is submitted
+
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam activityBackgroundColor #EEF5FF
+skinparam activityBorderColor #4A78B5
+skinparam activityDiamondBackgroundColor #FFFFFF
+skinparam activityDiamondBorderColor #4A78B5
+skinparam noteBackgroundColor #F7FAFF
+skinparam noteBorderColor #4A78B5
+
+start
+:Collect the parties: the inline stake
+credential of every input and output
+carrying the security token;<<#EEF5FF>>
+note right
+  A party is a CREDENTIAL, not an
+  address and not a UTxO. A key and
+  a script sharing a hash are two
+  different parties.
+end note
+
+:Read the denylist from an indexer:
+every UTxO at the denylist address
+holding a list-policy NFT;<<#EEF5FF>>
+:Decode each node - key from the asset
+name after the 4-byte "Node" prefix,
+link from the inline datum;<<#EEF5FF>>
+
+repeat :Take the next party hash h;<<#EEF5FF>>
+  if (A node keyed exactly at h?) then (yes)
+    :STOP - this party is sanctioned.
+    No covering node exists, so the
+    transaction cannot be built;<<#FDEEEE>>
+    stop
+  else (no)
+    :Select the node P with
+    P.key < h < P.link;<<#EEF5FF>>
+    :Add P to reference_inputs
+    (never as a spend);<<#EEF5FF>>
+  endif
+repeat while (More parties?) is (yes) not (no)
+
+:Order the action list to match the order
+the validator will derive the parties;<<#EEF5FF>>
+note right
+  Actions are matched POSITIONALLY.
+  Inputs are canonically sorted by the
+  ledger before any script runs, so the
+  sender order is not the order you
+  listed them. Output order is yours.
+end note
+
+:Keep parties citing the same covering
+node adjacent, so the node is
+authenticated once per run;<<#EEF5FF>>
+:Attach each action: the covering-node
+index into reference_inputs, plus a KYC
+proof when the flag is set;<<#EEF5FF>>
+:Submit;<<#EAF6F0>>
+stop
+@enduml

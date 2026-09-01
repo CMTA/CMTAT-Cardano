@@ -24,3 +24,9 @@ _posts/2026-08-26-cardano-cmta-swiss-german-profiles.md
 README-cpt-rwa-ch-de-cmta-reference.md   (assessment, not an article)
   - assets/article/blockchain/cardano/cpt-rwa-ch-de-cmta-reference-denylist-rejection-workflow.puml  [workflow]  -> in-section (Annex / sanctioned holder)
   - assets/article/blockchain/cardano/cpt-rwa-ch-de-cmta-reference-pause-rejection-workflow.puml     [workflow]  -> in-section (Annex / paused protocol)
+
+2026-08-31-cardano-absence-proof-sanctions-list.md
+  - assets/article/blockchain/cardano/cardano-absence-proof-sanctions-list.puml           [mindmap]   -> cardano-absence-proof-sanctions-list.png (Conclusion)
+  - assets/article/blockchain/cardano/cardano-absence-proof-sanctions-list-concept.puml   [concept]   -> in-section (the denylist as a sorted linked list)
+  - assets/article/blockchain/cardano/cardano-absence-proof-sanctions-list-workflow.puml  [workflow]  -> in-section (constructing the proof)
+  - assets/article/blockchain/cardano/cardano-absence-proof-sanctions-list-sequence.puml  [sequence]  -> in-section (where the invariant is established)

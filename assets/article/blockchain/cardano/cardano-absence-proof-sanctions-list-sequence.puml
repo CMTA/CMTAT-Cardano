@@ -1,0 +1,57 @@
+@startuml
+title Who guarantees what - the trust chain behind a user-supplied proof
+
+skinparam shadowing false
+skinparam sequence {
+  ParticipantBackgroundColor #EEF5FF
+  ParticipantBorderColor #4A78B5
+  LifeLineBorderColor #4A78B5
+  ArrowColor #4A78B5
+}
+skinparam noteBackgroundColor #F7FAFF
+skinparam noteBorderColor #4A78B5
+
+participant "Compliance\noperator" as OP
+participant "Denylist\nmint validator" as MINT
+participant "Transaction\nbuilder" as TB
+participant "Ledger\n(phase 1)" as LEDGER
+participant "transfer_logic\nvalidator" as SCRIPT
+
+== Once, when a sanction is added ==
+OP -> MINT: AddToDenylist { user_pkh }
+MINT -> MINT: is_admin power user + signature\nkey length == 28\nexactly one input bears the policy
+MINT -> MINT: insert_ascending: spend the anchor,\nrewrite its link, emit the new node
+note over MINT
+  This is what makes a link
+  TRUSTWORTHY later: no node's
+  link can skip over a member.
+  The expensive invariant is
+  paid once, here.
+end note
+
+== Every transfer afterwards ==
+TB -> TB: search the list off-chain,\nfind the covering node
+TB -> LEDGER: transaction + reference input index
+LEDGER -> LEDGER: resolve reference inputs\nagainst the live UTxO set
+note right of LEDGER
+  The builder supplies an INDEX.
+  The ledger supplies the CONTENTS.
+  A non-existent or spent UTxO is
+  rejected before any script runs.
+end note
+LEDGER -> SCRIPT: Transaction (inputs, outputs,\nreference_inputs, redeemer)
+
+SCRIPT -> SCRIPT: authenticate: one list NFT,\nwell-formed datum, key from asset name,\nstill at the denylist spend address
+SCRIPT -> SCRIPT: covers_key: key < target < link,\nboth strict
+
+alt both hold
+  SCRIPT --> LEDGER: True - absence proved
+else anything fails
+  SCRIPT --> LEDGER: False or trap
+  note right of SCRIPT
+    Phase-2 validation is
+    all-or-nothing, so the
+    whole transaction fails.
+  end note
+end
+@enduml
