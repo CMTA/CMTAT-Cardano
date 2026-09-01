@@ -594,10 +594,9 @@ An issuer needing dividends, snapshots or delegated settlement should treat thos
 
 ### What the ledger supplies, and what had to be built
 
-Two CMTAT properties come from the ledger itself:
+One CMTAT property comes from the ledger itself: native assets are integer-only, so "no fractions" (ID 4) holds by construction rather than by setting `decimals` to zero.
 
-- Native assets are integer-only, so "no fractions" holds by construction rather than by setting `decimals` to zero.
-- A settlement transaction consumes the seller's UTxO, so double-settlement is prevented without a partial-freeze flag.
+Partial freeze (ID 18) is not a second one. A UTxO cannot be spent twice, so a settled output cannot be settled again, but that is not what `freezePartialTokens` is for. Its job is to reserve part of a position, holding an amount unavailable for other operations or in escrow pending settlement, and neither the ledger nor this implementation provides that. ID 18 sets out the three constructions that would recover the effect.
 
 The rest is machinery this codebase had to supply:
 
