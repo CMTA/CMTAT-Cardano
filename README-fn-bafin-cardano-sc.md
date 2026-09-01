@@ -37,7 +37,7 @@
 - [Reference](#reference)
 
 ## Document Version
-`v0.1.0` (this assessment), filled from CMTA assessment template `v0.2.0`
+`v0.2.0` (this assessment), filled from CMTA assessment template `v0.2.0`
 
 Note:
 

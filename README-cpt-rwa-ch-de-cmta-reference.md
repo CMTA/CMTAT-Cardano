@@ -95,7 +95,7 @@ The Solidity implementation ships four deployment variants, which appear as colu
 The implementation assessed here does not map onto exactly one variant. It sits closest to **CMTAT Standard** — both shipped profiles target equity-style regulated securities and the debt module is out of scope (IDs 41–54) — but it also answers `y` to the **CMTAT Allowlist** row, because KYC is a built-in attestation check rather than an external rule set, *and* to the external-rules and RuleEngine rows, because the transfer and seizure logic scripts are themselves pluggable over the CIP-113 core. Read the variant columns as the origin of each requirement, not as a single target to match.
 
 ## Document Version
-`v0.1.0` (this assessment), filled from CMTA assessment template `v0.2.0`
+`v0.2.0` (this assessment), filled from CMTA assessment template `v0.2.0`
 
 Note:
 
