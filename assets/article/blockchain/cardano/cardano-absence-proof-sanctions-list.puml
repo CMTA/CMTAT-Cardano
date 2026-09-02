@@ -1,0 +1,43 @@
+@startmindmap
+<style>
+mindmapDiagram {
+  node {
+    BackgroundColor #EEF5FF
+    LineColor #4A78B5
+  }
+  :depth(1) {
+    BackgroundColor #4A78B5
+    FontColor white
+  }
+}
+</style>
+* Absence proofs\non Cardano
+** The problem
+*** A validator sees one transaction\nand nothing else
+*** No lookup, no chain access
+*** Citation is the only channel\nfor on-chain state
+** The structure
+*** Sorted linked list of UTxOs
+*** Key minted into the asset name,\nimmutable
+*** Link in the inline datum,\nmutable
+*** Root is -inf, a None link is +inf
+** The proof
+*** One covering node,\nsupplied as a reference input
+*** key < target < link,\nboth bounds strict
+*** O(1), whatever the list length
+*** Sanctioned party: no gap exists,\nso the proof cannot be built
+** Why user input is safe
+*** The builder supplies an index
+*** The ledger supplies the contents
+*** Sufficiency, not correctness
+*** Forgery fails on the NFT,\nthe datum or the address pin
+** Where trust sits
+*** insert_ascending keeps\nthe chain exact
+*** Links can never skip a member
+*** Paid once per sanction,\nnot once per transfer
+** Building it
+*** Parties are stake credentials
+*** Actions matched positionally
+*** Ledger sorts inputs before\nscripts run
+*** Adjacent parties sharing a node\nauthenticate once
+@endmindmap

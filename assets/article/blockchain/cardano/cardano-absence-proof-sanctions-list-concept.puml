@@ -1,0 +1,54 @@
+@startuml
+title The denylist as a sorted linked list - what a covering node proves
+
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam rectangle {
+  BackgroundColor #EEF5FF
+  BorderColor #4A78B5
+}
+skinparam noteBackgroundColor #F7FAFF
+skinparam noteBorderColor #4A78B5
+
+rectangle "**Root**\nkey = empty (-inf)\nlink -> 0x11" as ROOT
+rectangle "**Node**\nkey = 0x11\nlink -> 0x77" as N11
+rectangle "**Node**\nkey = 0x77\nlink -> 0x99" as N77 #FDEEEE
+rectangle "**Node**\nkey = 0x99\nlink = None (+inf)" as N99
+
+ROOT -right-> N11
+N11 -right-> N77
+N77 -right-> N99
+
+note bottom of N11
+  **Bob = 0x44 is NOT sanctioned.**
+  This node covers him:
+  0x11 < 0x44 < 0x77
+  Both bounds strict, so Bob
+  cannot be hiding in the gap.
+end note
+
+note bottom of N77
+  **Alice = 0x77 IS sanctioned.**
+  Her own node occupies the slot,
+  so no gap contains her:
+  node 0x11 links exactly to 0x77
+  (0x77 < 0x77 fails), and her own
+  node fails 0x77 < 0x77 too.
+  No covering node can exist.
+end note
+
+note top of ROOT
+  Each node is ONE UTxO:
+  * at the denylist spend address
+  * holding exactly ADA + 1 list NFT
+  * key minted into the asset name
+    ("Node" ++ 28-byte hash), immutable
+  * link in the inline datum, mutable
+end note
+
+note top of N99
+  An EMPTY denylist is just the root,
+  key -inf and link +inf, which covers
+  every possible party.
+end note
+@enduml

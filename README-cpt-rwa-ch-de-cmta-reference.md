@@ -22,6 +22,7 @@ The code assessed, the commit it is pinned to and the toolchain are recorded und
 - [How to Use This Document](#how-to-use-this-document)
 - [General Note](#general-note)
 - [Warning](#warning)
+- [Summary](#summary)
 - [Relationship to the other assessments in this repository](#relationship-to-the-other-assessments-in-this-repository)
 - [Architecture Primer (read first)](#architecture-primer-read-first)
 - [CMTAT Function Equivalency Table](#cmtat-function-equivalency-table)
@@ -48,6 +49,12 @@ The code assessed, the commit it is pinned to and the toolchain are recorded und
   - [State integrity](#state-integrity)
   - [Token metadata](#token-metadata)
   - [Operational evidence](#operational-evidence)
+- [Conclusion](#conclusion)
+  - [No mandatory item is absent](#no-mandatory-item-is-absent)
+  - [The absences are deliberate and declared](#the-absences-are-deliberate-and-declared)
+  - [What the ledger supplies, and what had to be built](#what-the-ledger-supplies-and-what-had-to-be-built)
+  - [Two behaviours are enforced by composition, not by any check here](#two-behaviours-are-enforced-by-composition-not-by-any-check-here)
+  - [What this assessment does not establish](#what-this-assessment-does-not-establish)
 - [Annex](#annex)
   - [Terms](#terms)
   - [What "validator" means here](#what-validator-means-here)
@@ -93,7 +100,7 @@ The Solidity implementation ships four deployment variants, which appear as colu
 The implementation assessed here does not map onto exactly one variant. It sits closest to **CMTAT Standard** — both shipped profiles target equity-style regulated securities and the debt module is out of scope (IDs 41–54) — but it also answers `y` to the **CMTAT Allowlist** row, because KYC is a built-in attestation check rather than an external rule set, *and* to the external-rules and RuleEngine rows, because the transfer and seizure logic scripts are themselves pluggable over the CIP-113 core. Read the variant columns as the origin of each requirement, not as a single target to match.
 
 ## Document Version
-`v0.1.0` (this assessment), filled from CMTA assessment template `v0.2.0`
+`v0.2.0` (this assessment), filled from CMTA assessment template `v0.2.0`
 
 Note:
 
@@ -118,9 +125,33 @@ An implementation MAY satisfy the CMTAT standard while still failing to meet the
 > 1. **Unaudited.** The repository states plainly that a formal third-party security audit is *planned and not yet completed*, and that the code should be treated as unaudited until it is. Two penetration-testing engagements were carried out by FT Labs on 23 and 26 June 2026 against commits `dd2b754` and `1beeed6`; the minting-proxy upgradability, the `GlobalStateLocation` change and the 2026-08-19/20 internal-review fixes all postdate both, so **neither report covers the assessed code**.
 > 2. **Internal adversarial review, not an audit.** An internal review of the compliance layer found eleven defects (two critical). **Ten were fixed**, each pinned by a test in `validators/regression.ak`; the eleventh — *pause does not stop issuance*, severity medium — was **accepted as intended behaviour rather than fixed**, and is recorded here as the `Mint while pause` row of [Implementation Details](#implementation-details). All eleven are written up in [`documents/security/security-fixes.md`](./cpt-rwa-ch-de-cmta-reference/documents/security/security-fixes.md).
 > 3. This assessment is a **functional-mapping exercise only**. It is not a security review and not a legal opinion.
-> 4. **Two deployment properties no on-chain code can check** (recorded by the implementation itself) materially affect several `y` answers below: the GlobalState NFT must actually land at `global_state_spend_validator`'s address at genesis, and every role credential must name something that genuinely decides (the `must_be_signed_by_credential` helper accepts a script withdrawal, so a permissive script hash in any role field fails **open**, silently). Both must be verified off-chain, after genesis and after every rotation.
+> 4. **Two deployment properties no on-chain code can check** (recorded by the implementation itself) materially affect several `y` answers below: the GlobalState NFT must actually land at `global_state_spend_validator`'s address at genesis, and every role credential must name a key or a script capable of refusing (the `must_be_signed_by_credential` helper accepts a script withdrawal, so a permissive script hash in any role field fails **open**, silently). Both must be verified off-chain, after genesis and after every rotation.
 
 Parts of this project, including this document, were written with the help of the AI coding assistant Claude Code (Anthropic).
+
+## Summary
+
+| Answer | Mandatory (17) | Optional (37) |
+|---|---:|---:|
+| Present (`y`) | 14 | 3 |
+| Partial | 3 | 4 |
+| Absent (`n`) | 0 | 30 |
+
+**Every mandatory item is present.** Two of the fourteen are carried by CIP-68 metadata rather than by an accessor function, and the three partials — the legal-documentation reference, total supply and balance — follow from eUTXO having no accounts and no contract storage, not from a missing feature.
+
+Of the 30 absent optional items, 26 belong to four modules the repository names among the optional CMTA modules it deliberately does not implement: snapshots, distributions, credit events and debt terms. The remaining four are the allowance model (ID 11) and partial freeze (ID 18), neither of which has an eUTXO equivalent, and the conditional-transfer pair (IDs 19 and 20), where approval is an off-chain attestation rather than an on-chain queue. Forced transfer, an integrated KYC allowlist, an on-chain supply cap and an irreversible deactivation switch are all present.
+
+Read the [Warning](#warning) before relying on any answer: two deployment properties that no on-chain code can check materially affect several `y` answers, and the code is unaudited.
+
+##### Note
+
+> **The three mandatory partials, and what a reader has to do instead.** None of them is a gap in the compliance logic; each is a CMTAT accessor with no on-chain counterpart on a ledger that has neither accounts nor contract storage.
+>
+> - **ID 3, reference to legally required documentation.** There is no CMTAT `terms` structure and **no on-chain document-hash field**. `GlobalStateDatum.security_info` is opaque `Data`, capped at 4 096 CBOR bytes and parsed by no validator, so a document URI and its hash would have to be encoded inside that blob or in the CIP-68 datum. `lib/types/security/bafin.ak` gives the intended shape, but only for the German profile; the Swiss profile ships no schema type. Unlike IDs 6 and 7, this one carries an off-chain obligation: the repository states explicitly that keeping the field correct, and consistent with the register, is a duty of the issuer and registrar.
+> - **ID 6, know total supply.** There is no `totalSupply()`. `mintable_amount` is a **remaining-mintable cap**, decremented on mint and credited back on burn, so it answers "how much may still be issued", not "how much exists". `SecurityInfo.volume_of_issuance` records the intended total as metadata. Circulating supply is the sum of the on-chain UTxOs and comes from any chain indexer.
+> - **ID 7, know balance.** There is no `balanceOf()`. A holder's position is the sum of the security-token quantity across the programmable-base UTxOs whose inline stake credential is that holder, and it is read off the ledger rather than from the contract. The stake credential is the owner identity under CIP-113, which is why enterprise addresses are rejected by both transfer paths.
+>
+> IDs 6 and 7 are answered `partial` rather than `y` because the CMTAT accessor is absent, not because the information is unavailable: both quantities are public and exact, and any indexer returns them. IDs 1 and 2, name and ticker, are marked `y (metadata)` for the related reason that they live in the CIP-68 reference NFT instead of in an accessor.
 
 ## Relationship to the other assessments in this repository
 
@@ -222,7 +253,16 @@ For CMTAT reference implementations, `tokenId` SHOULD be included.
 >
 > Both routes must **spend** GlobalState rather than reference it, since `MintSecurity` is what enforces and restores the supply cap. Conway rejects a transaction that both spends and references the same UTxO, which is why the transfer, seizure and minting redeemers all carry a `GlobalStateLocation` instead of a fixed reference index.
 >
-> **Practical consequence for role assignment:** grant `can_burn` and `can_force_transfer` together to whoever is expected to execute court-ordered or regulator-ordered cancellations. `can_burn` alone is not sufficient authority to retire a sanctioned holder's position. See also ID 15 (the denylist), ID 17 (forced transfer, including the all-or-nothing-per-UTxO limit) and the [Implementation Details](#implementation-details) table.
+> **Two gates, checked independently.** Neither role substitutes for the other:
+>
+> | Flag | Checked by | What it authorises |
+> |---|---|---|
+> | `can_force_transfer` | `third_party_transfer_logic_validator` | spending the holder's UTxO, with no pause gate and no source-side checks |
+> | `can_burn` | `minting_authority_validator`, `MintBurn` branch | the negative mint that destroys the supply |
+>
+> Each validator resolves its own power-user node through its own reference-input index, so the two flags may sit on one node, satisfied by a single operator and a single signature, or on two nodes requiring both operators to sign.
+>
+> **Practical consequence for role assignment:** grant `can_burn` and `can_force_transfer` together to whoever is expected to execute court-ordered or regulator-ordered cancellations. `can_burn` alone is not sufficient authority to retire a sanctioned holder's position. Splitting the two across separate operators makes one compromised key insufficient, at the cost of needing both signatories present for an enforcement action that is usually time-sensitive. See also ID 15 (the denylist), ID 17 (forced transfer, including the all-or-nothing-per-UTxO limit) and the [Implementation Details](#implementation-details) table.
 
 #### Optional
 
@@ -533,6 +573,77 @@ What the repository measures and pins, as distinct from what it enforces.
 - **Measured execution budget**: `aiken bench` scaling benchmarks for the transfer and seizure paths, published per-party costs, and conservative per-transaction party maxima at 25 % of the shared CIP-113 budget.
 - **Regression suite** (`validators/regression.ak`) pinning every fixed defect, with positive controls paired to each negative test.
 - **eUTXO-native batch mint/transfer** — a single transaction can create or move tokens across many holders, subject to the budget limits above.
+
+## Conclusion
+
+The CMTAT framework is blockchain-agnostic; its Solidity reference implementation is the part that assumes accounts, contract storage and a `msg.sender`. Cardano supplies none of them:
+
+- Value sits in unspent outputs rather than in balances.
+- A deployed script cannot be modified.
+- A validator sees only the transaction in front of it, with no access to the ledger beyond what that transaction names.
+
+This assessment records which of the framework's required behaviours are produced under those constraints, and what it takes to produce them.
+
+### No mandatory item is absent
+
+Of the 17 mandatory items, fourteen are answered `y` and three `partial`. All three are CMTAT accessors with no on-chain counterpart where a balance is a set of UTxOs rather than an integer in a mapping.
+
+- `totalSupply` and `balanceOf` describe information that is public and exact, and that any indexer returns.
+- `terms`, the legal-documentation reference, places an obligation on the issuer and registrar rather than only moving where the data is read from. The note below sets out what would close it.
+
+### The absences are deliberate and declared
+
+Of the 30 absent optional items:
+
+- **26 are four modules the repository declines to implement** — snapshots, distributions, credit events and debt terms — which it names explicitly among the optional CMTA modules it leaves out.
+- **Two have no eUTXO form**: the allowance model and partial freeze.
+- **Two are answered `n (implicit)`**: the conditional-transfer pair, where approval exists as an off-chain attestation rather than an on-chain queue.
+
+An issuer needing dividends, snapshots or delegated settlement should treat those as work not yet done, not as work the ledger prevents.
+
+### What the ledger supplies, and what had to be built
+
+One CMTAT property comes from the ledger itself: native assets are integer-only, so "no fractions" (ID 4) holds by construction rather than by setting `decimals` to zero.
+
+Partial freeze (ID 18) is not a second one. A UTxO cannot be spent twice, so a settled output cannot be settled again, but that is not what `freezePartialTokens` is for. Its job is to reserve part of a position, holding an amount unavailable for other operations or in escrow pending settlement, and neither the ledger nor this implementation provides that. ID 18 sets out the three constructions that would recover the effect.
+
+The rest is machinery this codebase had to supply:
+
+- The absence of a mapping type turns each of the sanction and role sets into a linked list, with its own mint and spend validators.
+- Mutable configuration needs an NFT-authenticated state UTxO.
+- An upgrade path needs a proxy and a swappable authority, because a deployed script cannot be modified.
+
+Ten validators do what a single Solidity contract does, and the compliance checks a transfer performs are paid per party against a shared execution budget, which caps an ordinary transfer near 13 parties per side.
+
+### Two behaviours are enforced by composition, not by any check here
+
+- **Burning is gated by the pause and by the denylist.** A burn spends a programmable-base UTxO, so the CIP-113 base layer runs the paused transfer logic over it. Burning is therefore blocked during a pause and refused for a sanctioned holder, and retiring such a position needs **both** `can_burn` and `can_force_transfer`, checked by two different validators.
+- **Seizure from a sanctioned holder is all-or-nothing per UTxO**, because a partial seizure's residual returns to an address that can no longer produce a denylist-absence proof.
+
+Neither role substitutes for the other, and the note under ID 10 sets out the routing, the two gates and what it means for role assignment.
+
+No validator here implements either rule; both follow from the base layer's dispatch, and the repository records them under *Operational constraints imposed by the base layer* rather than as features it provides. Neither is visible from the validators alone, and the burn constraint corrects the pause exemption as the repository first documented it.
+
+### What this assessment does not establish
+
+- **The code is unaudited.** A third-party audit is planned and not complete, and the two penetration tests predate the assessed commit.
+- **Two deployment properties cannot be checked on-chain:** that the GlobalState NFT lands at `global_state_spend_validator`'s address at genesis, and that every role credential names a key or a script capable of refusing. Both materially affect several `y` answers above, and a mistake in either fails open with no signal.
+
+This document is a functional mapping of one revision against one template. It is not a security review, and it is not a legal opinion on whether a token deployed this way satisfies any jurisdiction's requirements for ledger-based securities.
+
+##### Note
+
+> **What it would take to answer ID 3 with `y`.** The requirement is small. The template asks for `terms` as a public view, and for ID 43 the document hash it carries. In the Solidity version that is a name plus an ERC-1643 `Document`: a URI and a 32-byte `documentHash`, with `setTerms` role-restricted. Nothing in CMTAT checks that the document at the URI hashes to `documentHash`, so what is missing here is a defined structure rather than a verification capability, and adding it introduces no new trust assumption.
+>
+> - **Define the structure.** Add a typed `terms` field to the `SecurityInfo` schema in `lib/types/security/bafin.ak`, and to the Swiss schema the repository does not yet ship: an issuance-terms name, a document URI and a 32-byte hash. That alone gives structural parity, since `security_info` would stay opaque `Data` in the datum exactly as CMTAT's terms stays unverified storage.
+> - **Or carry it in the CIP-68 reference NFT**, where the name and ticker already live (IDs 1 and 2). A `doc_uri` and `doc_hash` pair, or a CIP-25-style `files` entry, keeps every human-facing attribute in one datum and updates through the same admin path. This is the more idiomatic Cardano placement, and it would make IDs 1, 2 and 3 answer on the same basis instead of three different ones.
+> - **Optionally, check the shape on update.** `ModifySecurityInfo` currently checks only the 4 096-byte cap. It could decode far enough to require the hash to be exactly 32 bytes, refusing a malformed reference where it is written rather than leaving it to surface later. This is hardening beyond the template, not a condition of the answer, and it sits on an admin action taken rarely rather than on the per-transfer path, so holders do not pay for it out of the shared execution budget.
+>
+> Defining the structure is what moves ID 3 to `y (metadata)`, on the same footing as IDs 1 and 2.
+>
+> Note that the ERC-1643 `Document` struct also carries a `lastModified` timestamp. That comes from the Ethereum draft standard rather than from the CMTA specification, so it is not needed for this answer, and modification time is available from chain history either way: from events on an EVM, and on Cardano from the transaction that spent the datum, which the ledger records and any indexer returns.
+>
+> The part that no schema change addresses is the obligation. Populating the field correctly, and keeping it consistent with the register, remains an off-chain duty of the issuer and registrar whichever placement is chosen.
 
 ## Annex
 

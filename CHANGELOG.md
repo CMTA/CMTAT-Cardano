@@ -65,7 +65,42 @@ diff CLAUDE.md AGENTS.md
 
 _Nothing yet._
 
+## v0.2.0 - 2026-09-01
+
+`Summary`: an at-a-glance answer summary in every assessment, a conclusion for the current codebase, and an article on how a party proves it is not on the sanctions list.
+
+### Added
+
+- A `Summary` section in each of the three assessments, giving the answer counts split between the 17 mandatory items and the 37 optional ones, placed after the `Warning` so the counts are never read without the audit status attached.
+- A `Conclusion` to the `cpt-rwa-ch-de-cmta-reference` assessment, covering what the eUTXO model supplies directly, what had to be built on top of it, and the two behaviours enforced by composition with the CIP-113 base layer rather than by any validator in the codebase.
+- A note explaining the three mandatory `partial` answers, separating the two whose data is public and exact from the one that places an obligation on the issuer and registrar.
+- A note setting out what would move ID 3, the legal-documentation reference, from `partial` to `y`: define a typed `terms` field in the `SecurityInfo` schema, or carry the URI and hash in the CIP-68 reference NFT alongside the name and ticker.
+- Article on [absence proofs](./2026-08-31-cardano-absence-proof-sanctions-list.md): how a party proves it is not on the sanctions list, why a caller-supplied reference input is sound, and what a transaction builder must do to satisfy the check.
+
+### Fixed
+
+- Corrected the conclusion's account of CMTAT, which described the framework as assuming accounts and contract storage.
+  - The framework is blockchain-agnostic; its Solidity reference implementation is what carries those assumptions.
+  - This restated an error already corrected elsewhere in v0.1.0, in text written after that correction.
+- Removed a claim that neither composition constraint is stated anywhere in the assessed repository. Both are, under *Operational constraints imposed by the base layer* and in its README; what is true is that no validator implements either.
+- Aligned the conclusion's mandatory count with the `Summary` table, which counts fourteen `y` and three `partial` rather than seventeen present.
+- Corrected the ID 3 remediation, which treated the ERC-1643 `lastModified` timestamp as part of the CMTA requirement.
+  - It is not in the template, and modification time is recoverable from chain history on either platform.
+  - The proposed validity-range check was dropped as a result; defining the structure is the whole of the change.
+- Stated the exact split of the 30 absent optional items: 26 belong to the four modules the repository declines to implement, and the other four are the allowance model, partial freeze and the conditional-transfer pair.
+
+### Changed
+
+- Removed cost comparisons the assessments do not measure, including a claim that some properties cost more on Cardano than on EVM.
+- Replaced intensifiers that asserted a property without naming it, such as a role credential that "genuinely decides", with the behaviour that distinguishes the real case: a credential capable of refusing.
+
+### Diagrams
+
+- Four PlantUML sources for the absence-proof article, registered in [`tree.txt`](./tree.txt): a mindmap, the sorted linked list, the off-chain build, and the trust chain across the sanction and transfer paths.
+
 ## v0.1.0 - 2026-08-31
+
+Commit: `fec1d9ea430a99960ce7d544ccedccce2bb7e55e`
 
 `Summary`: first release. Three filled CMTA equivalency assessments covering the Cardano CIP-113 security-token lineage, two long-form articles, and the specification PDF built from them.
 

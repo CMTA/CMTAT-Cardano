@@ -46,6 +46,7 @@ The blank template itself lives in the submodule, at [`CMTAT-equivalency-assessm
 |---|---|
 | [`2026-07-17-cmtat-cardano-cip113.md`](./2026-07-17-cmtat-cardano-cip113.md) | How the CIP-113 `security-token` substandard reconstructs CMTAT on eUTXO: the validator set, the three authorities, the compliance gate, and the equivalency result. |
 | [`2026-08-26-cardano-cmta-swiss-german-profiles.md`](./2026-08-26-cardano-cmta-swiss-german-profiles.md) | What the successor codebase changed: the permanent proxy and swappable minting authority, the one-way upgrade lock and terminal deactivation state, and two behaviours that emerge from composing the deployment with the CIP-113 base layer. |
+| [`2026-08-31-cardano-absence-proof-sanctions-list.md`](./2026-08-31-cardano-absence-proof-sanctions-list.md) | How a party proves it is *not* on the sanctions list: the sorted linked list, the covering-node absence proof, why a caller-supplied reference input is not a trust hole, and what a transaction builder must do to satisfy it. |
 
 Both are written for this repository and are not published elsewhere. Each embeds its diagrams as PNGs from `assets/`.
 
