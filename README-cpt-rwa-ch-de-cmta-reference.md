@@ -253,7 +253,16 @@ For CMTAT reference implementations, `tokenId` SHOULD be included.
 >
 > Both routes must **spend** GlobalState rather than reference it, since `MintSecurity` is what enforces and restores the supply cap. Conway rejects a transaction that both spends and references the same UTxO, which is why the transfer, seizure and minting redeemers all carry a `GlobalStateLocation` instead of a fixed reference index.
 >
-> **Practical consequence for role assignment:** grant `can_burn` and `can_force_transfer` together to whoever is expected to execute court-ordered or regulator-ordered cancellations. `can_burn` alone is not sufficient authority to retire a sanctioned holder's position. See also ID 15 (the denylist), ID 17 (forced transfer, including the all-or-nothing-per-UTxO limit) and the [Implementation Details](#implementation-details) table.
+> **Two gates, checked independently.** Neither role substitutes for the other:
+>
+> | Flag | Checked by | What it authorises |
+> |---|---|---|
+> | `can_force_transfer` | `third_party_transfer_logic_validator` | spending the holder's UTxO, with no pause gate and no source-side checks |
+> | `can_burn` | `minting_authority_validator`, `MintBurn` branch | the negative mint that destroys the supply |
+>
+> Each validator resolves its own power-user node through its own reference-input index, so the two flags may sit on one node, satisfied by a single operator and a single signature, or on two nodes requiring both operators to sign.
+>
+> **Practical consequence for role assignment:** grant `can_burn` and `can_force_transfer` together to whoever is expected to execute court-ordered or regulator-ordered cancellations. `can_burn` alone is not sufficient authority to retire a sanctioned holder's position. Splitting the two across separate operators makes one compromised key insufficient, at the cost of needing both signatories present for an enforcement action that is usually time-sensitive. See also ID 15 (the denylist), ID 17 (forced transfer, including the all-or-nothing-per-UTxO limit) and the [Implementation Details](#implementation-details) table.
 
 #### Optional
 
@@ -611,16 +620,7 @@ Ten validators do what a single Solidity contract does, and the compliance check
 - **Burning is gated by the pause and by the denylist.** A burn spends a programmable-base UTxO, so the CIP-113 base layer runs the paused transfer logic over it. Burning is therefore blocked during a pause and refused for a sanctioned holder, and retiring such a position needs **both** `can_burn` and `can_force_transfer`, checked by two different validators.
 - **Seizure from a sanctioned holder is all-or-nothing per UTxO**, because a partial seizure's residual returns to an address that can no longer produce a denylist-absence proof.
 
-Burning during a pause, or from a sanctioned holder, therefore has to open two independent gates in one transaction. Neither role substitutes for the other:
-
-| Gate | Validator | Requires |
-|---|---|---|
-| The spend is permitted | `third_party_transfer_logic_validator` (no pause gate, no source-side checks) | `can_force_transfer`, and that operator's signature |
-| The supply may be destroyed | `minting_authority_validator`, `MintBurn` branch | `can_burn`, and that operator's signature |
-
-The seizure path is the only branch left once transfers are paused, since `TransferAct` would run the paused transfer logic and the two base-layer escapes are unavailable. It burns rather than moves because a negative mint leaves no token-bearing output, so the destination list the seizure validator vets is empty. GlobalState must be spent rather than referenced, so its `MintSecurity` branch credits the amount back to `mintable_amount`.
-
-Each of the two validators cites its own power-user node, so the flags may sit on one node held by one operator, or on two nodes requiring two signatures. The repository recommends granting both to whoever performs court- or regulator-ordered cancellations; splitting them makes a single compromised key insufficient, at the cost of needing two signatories present.
+Neither role substitutes for the other, and the note under ID 10 sets out the routing, the two gates and what it means for role assignment.
 
 No validator here implements either rule; both follow from the base layer's dispatch, and the repository records them under *Operational constraints imposed by the base layer* rather than as features it provides. Neither is visible from the validators alone, and the burn constraint corrects the pause exemption as the repository first documented it.
 
